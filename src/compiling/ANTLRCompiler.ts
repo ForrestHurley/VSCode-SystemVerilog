@@ -6,11 +6,13 @@ import {
     TextDocument
 } from "vscode-languageserver";
 import { DocumentCompiler, DiagnosticData, isDiagnosticDataUndefined } from './DocumentCompiler';
-import { ANTLRInputStream, CommonTokenStream, ConsoleErrorListener} from 'antlr4ts';
+import { ANTLRInputStream, CommonTokenStream, ConsoleErrorListener, Token, CharStream, InputMismatchException} from 'antlr4ts';
 import {SystemVerilogLexer} from './ANTLR/grammar/build/SystemVerilogLexer'
-import {SystemVerilogParser} from './ANTLR/grammar/build/SystemVerilogParser'
+import {SystemVerilogParser, System_verilog_textContext} from './ANTLR/grammar/build/SystemVerilogParser'
 import {SyntaxErrorListener} from './ANTLR/SyntaxErrorListener'
 import { isSystemVerilogDocument, isVerilogDocument } from '../utils/server';
+import { ParseTree } from "antlr4ts/tree/ParseTree";
+import { Tree } from "antlr4ts/tree/Tree";
 
 export class ANTLRCompiler extends DocumentCompiler {
 
@@ -65,6 +67,30 @@ export class ANTLRCompiler extends DocumentCompiler {
             }
             resolve(diagnosticCollection);
         });
+    }
+
+    private generateVariablesAbstractTree(concreteTree : System_verilog_textContext) {
+        let absIdentifierTree : Tree;
+        let concreteChildren : ParseTree[] = concreteTree.children;
+        concreteChildren.forEach((child: ParseTree) => {
+            // if(isSimpleIdentifier(child.payload)){
+            //     //TODO construct the tree
+            // }
+        })
+    }
+
+    private findSimpleIdentifierLeaf(currentChild : number, concreteTree: System_verilog_textContext): Token {
+        let currentTree = concreteTree.getChild(currentChild);
+        let leafIndex = currentChild;
+        let nextChild = currentTree.getChild(0);
+        while(nextChild.getChild(0)) {
+            leafIndex++;
+            nextChild = nextChild.getChild(0);
+        }
+        let chStream : ANTLRInputStream = new ANTLRInputStream(nextChild.text);
+        let tempLexer : SystemVerilogLexer = new SystemVerilogLexer(chStream);
+        let tokenType = tempLexer.nextToken().type;
+        return concreteTree.tryGetToken(tokenType, leafIndex)._symbol;
     }
 
     /**
