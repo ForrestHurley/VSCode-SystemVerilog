@@ -13,7 +13,7 @@ export class AbstractTokenTree {
     /**
      * An array of subtrees which begin at this node
      */
-    private directChildren : Array<AbstractTokenTree> | undefined;
+    private directChildren? : Array<AbstractTokenTree>;
     /**
      * The token for this node
      */
@@ -22,16 +22,35 @@ export class AbstractTokenTree {
      * The number of children contained in the subtree below this node
      */
     private childCount : number;
+    /**
+     * If this tree is the root of the tree, this map will contain the token-node
+     * pairs for all children and 
+     */
+    private tokenMap? : Map<Token, AbstractTokenTree>
+    /**
+     * 
+     */
+    private rootNode : AbstractTokenTree;
 
     /**
-     * Will take 
-     * @param token 
-     * @param parent 
+     * Will take a Token as a core constructor, if provided a parent tree it will store that parent,
+     * if provided a root node it will store that root
+     * 
+     * @param token - the Token for this node
+     * @param parent - the parent node for this node, null if this is the root
+     * @param root - the root node for the entire tree, set to this tree if this is the root
      */
-    public constructor(token: Token, parent? : AbstractTokenTree) {
+    public constructor(token: Token, parent? : AbstractTokenTree, root? : AbstractTokenTree) {
         this.token = token;
-        this.parent = parent;
+        this.parent = parent ? parent : null;
         this.childCount = 0;
+        this.rootNode = root ? root : this;
+        if(this.rootNode === this) {
+            this.rootNode.addToMap(token, this);
+        }
+        if(this.parent){
+            this.parent.addChild(this);
+        }
     }
 
     public getParent() : AbstractTokenTree | undefined {
@@ -53,6 +72,7 @@ export class AbstractTokenTree {
     public addChild(newChild: AbstractTokenTree) {
         this.directChildren.push(newChild);
         this.childCount += newChild.getChildCount() + 1;
+        this.rootNode.addToMap(newChild.getToken(), newChild);
     }
 
     public getTreeTokens() : Array<Token> {
@@ -66,5 +86,14 @@ export class AbstractTokenTree {
         }
         return out;
     }
-    
+
+    public addToMap(key : Token, value: AbstractTokenTree) {
+        if (!this.parent && !this.tokenMap.has(key) ) {
+            this.tokenMap.set(key, value);
+        }
+    }
+
+    public getTreeFromToken(token: Token) {
+        return this.parent ? null : this.tokenMap.get(token);
+    }
 }
