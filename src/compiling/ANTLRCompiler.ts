@@ -11,9 +11,7 @@ import {SystemVerilogLexer} from './ANTLR/grammar/build/SystemVerilogLexer'
 import {SystemVerilogParser, System_verilog_textContext} from './ANTLR/grammar/build/SystemVerilogParser'
 import {SyntaxErrorListener} from './ANTLR/SyntaxErrorListener'
 import { isSystemVerilogDocument, isVerilogDocument } from '../utils/server';
-import { ParseTree } from "antlr4ts/tree/ParseTree";
-import { Tree } from "antlr4ts/tree/Tree";
-import { AbstractTokenTree } from "./ANTLR/AbstractTokenTree";
+import { AbstractTreeGenerator } from "./ANTLR/AbstractTreeGenerator";
 
 export class ANTLRCompiler extends DocumentCompiler {
 
@@ -44,6 +42,7 @@ export class ANTLRCompiler extends DocumentCompiler {
 
             // Parse the input, where `compilationUnit` is whatever entry point you defined
             let tree = parser.system_verilog_text();
+            AbstractTreeGenerator.generateVariablesAbstractTree(tree);
 
             for (let i = 0; i < syntaxError.error_list.length; i++) {
                 let diagnosticData: DiagnosticData = new DiagnosticData();
@@ -68,55 +67,6 @@ export class ANTLRCompiler extends DocumentCompiler {
             }
             resolve(diagnosticCollection);
         });
-    }
-
-    private generateVariablesAbstractTree(concreteTree : System_verilog_textContext) {
-        let tokenTreeRoot : AbstractTokenTree;
-        let concreteChildren : ParseTree[] = concreteTree.children;
-        let index = 0;
-        let ruleNames : string[] = this.simpleIdentifiers();
-        let identfierToken : Token = null;
-        concreteChildren.forEach((child: ParseTree) => {
-            if(child.payload instanceof RuleContext){
-                if(this.isSimpleIdentifier(child.payload.toString(ruleNames))){
-                    let identifierToken = this.findSimpleIdentifierLeaf(index, concreteTree);
-                    index += child.childCount;
-                }
-            }
-            index++;
-        })
-    }
-
-    private findSimpleIdentifierLeaf(currentChild : number, concreteTree: System_verilog_textContext): Token {
-        let currentTree = concreteTree.getChild(currentChild);
-        let leafIndex = currentChild;
-        let nextChild = currentTree.getChild(0);
-        while(nextChild.getChild(0)) {
-            leafIndex++;
-            nextChild = nextChild.getChild(0);
-        }
-        let chStream : ANTLRInputStream = new ANTLRInputStream(nextChild.text);
-        let tempLexer : SystemVerilogLexer = new SystemVerilogLexer(chStream);
-        let tokenType = tempLexer.nextToken().type;
-        return concreteTree.tryGetToken(tokenType, leafIndex)._symbol;
-    }
-
-    private simpleIdentifiers() : string[] {
-        return new Array(
-            "array_identifier", "block_identifier", "bin_identifier", "cell_identifier", "checker_identifier", "class_identfier",
-            "clocking_identifier", "config_identifier", "const_identifier", "constraint_identifier", "covergroup_identifier", "cover_point_identifier",
-            "cross_identifier", "enum_identifier", "formal_identifier", "formal_port_identifier", "function_identifier", "generate_block_identifier",
-            "genvar_identifier", "index_variable_identifier", "interface_identifier", "interface_instance_identifier", "inout_port_identifier",
-            "input_port_identifier", "instance_identifier", "library_identifier", "memeber_identifier", "method_identifier", "modport_identifier",
-            "module_identifier", "net_identifier", "net_type_identifier", "output_port_identifier", "package_identifier", "parameter_identifier",
-            "port_identifier", "production_identifier", "program_identifier", "property_identifier", "sequence_identifier", "signal_identifier", 
-            "specparam_identifier", "task_identifier", "tf_identifier", "terminal_identifier", "topmodule_identifier", "type_identifier", "udp_identifier",
-            "variable_identifier"
-        );
-    }
-
-    private isSimpleIdentifier(ruleName : string) : boolean {
-        return ruleName !== "" && ruleName !== null;
     }
 
     /**
