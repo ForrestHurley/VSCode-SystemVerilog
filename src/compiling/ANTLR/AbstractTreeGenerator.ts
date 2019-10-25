@@ -3,24 +3,56 @@ import { AbstractTokenTree } from "./AbstractTokenTree";
 import { System_verilog_textContext } from "./grammar/build/SystemVerilogParser";
 import { Token, RuleContext, ANTLRInputStream } from "antlr4ts";
 import { SystemVerilogLexer } from "./grammar/build/SystemVerilogLexer";
+import { ParseTreeMatch } from "antlr4ts/tree/pattern/ParseTreeMatch";
 
 export class AbstractTreeGenerator {
+
     public static generateVariablesAbstractTree(concreteTree : System_verilog_textContext) : AbstractTokenTree {
-        let tokenTreeRoot : AbstractTokenTree;
+        let tokenTreeRoot : AbstractTokenTree = new AbstractTokenTree(null);
         let concreteChildren : ParseTree[] = concreteTree.children;
-        let index = 0;
+        let childrenMap : Map<ParseTree, ParseTree[]>;
         concreteChildren.forEach((child: ParseTree) => {
-            if(child.payload instanceof RuleContext){
-                if(this.isSimpleIdentifier(child.payload.toString(this.simpleIdentifiers()))){
-                    let tempToken = this.findSimpleIdentifierLeaf(index, concreteTree);
-                    if(tempToken) {
-                        let tokenNodeTree : AbstractTokenTree = new AbstractTokenTree(tempToken, tokenTreeRoot );
-                    }
-                    index += child.childCount;
+            if(childrenMap.has(child.parent)){
+                childrenMap.get(child.parent).push(child);
+            } else {
+                if(child.parent) {
+                    childrenMap.set(child.parent, [child]);
                 }
             }
-            index++;
         });
+
+        let subRoot : AbstractTokenTree = tokenTreeRoot;
+        childrenMap.forEach((children: ParseTree[], parent: ParseTree) => {
+            visitParseTree(subRoot, children, parent);
+        });
+
+        //Given the subRoot of the current subTree, parse the current rule to see if it is an identifier
+        //If it is create a new node in the AbstractTokenTree
+        //Else set the sub
+        const visitParseTree = (subRoot : AbstractTokenTree, children : ParseTree[], parent: ParseTree) => {
+            let out = subRoot;
+            if(!parent.parent){
+                out = tokenTreeRoot;
+            } else {
+                if(parent.payload instanceof RuleContext){
+                    if(this.isSimpleIdentifier(parent.payload.toString(this.simpleIdentifiers()))){
+                        let identifierChild : ParseTree = parent.getChild(0);
+                        while(identifierChild.childCount > 0){
+                            identifierChild = identifierChild.getChild(0);
+                        }
+                        let identifierToken : Token = identifierChild.payload as Token;
+                        let tokenNode : AbstractTokenTree = new AbstractTokenTree(identifierToken, out, tokenTreeRoot);
+                        return tokenNode;
+                    }
+                } else {
+                    children.forEach((child: ParseTree) => {
+                        out = !subRoot.getParent() ? visitParseTree(out, childrenMap.get(child), child) : subRoot;
+                    });
+                }
+            }
+            return out;
+        }
+
         return tokenTreeRoot;
     }
 
