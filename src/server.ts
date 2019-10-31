@@ -8,12 +8,17 @@ import {
 	TextDocumentPositionParams,
 	CompletionItem,
 	CompletionItemKind,
+	CompletionParams,
+	CompletionContext,
 	DidChangeTextDocumentParams,
-	DidSaveTextDocumentParams
+	DidSaveTextDocumentParams,
+	CompletionTriggerKind,
+	CompletionRequest
 } from 'vscode-languageserver';
 import { SystemVerilogCompiler, compilerType } from './compiling/SystemVerilogCompiler';
 import { ANTLRBackend } from './compiling/ANTLRBackend';
-
+import { Constant_multiple_concatenationContext } from './compiling/ANTLR/grammar/build/SystemVerilogParser';
+import { SVCompletionItemProvider } from './providers/CompletionProvider';
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 let connection = createConnection(ProposedFeatures.all);
@@ -40,7 +45,8 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
 			completionProvider: {
-				resolveProvider: true
+				resolveProvider: true,
+				triggerCharacters: ['.', ':', '$',' ']
 			}
 		}
 	};
@@ -57,21 +63,33 @@ connection.onInitialized(async () => {
  */
 connection.onCompletion(
 	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		// The pass parameter contains the position of the text document in
+	//(_completionparam: CompletionParams): CompletionItem[] => {
+	// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
-		return [
-			/*{
-				label: 'TypeScript',
-				kind: CompletionItemKind.Text,
-				data: 1
-			},
-			{
-				label: 'JavaScript',
-				kind: CompletionItemKind.Text,
-				data: 2
-			}*/
-		];
+		var clist: CompletionItem[] = [];
+		var doc = documents.get(_textDocumentPosition.textDocument.uri);
+		var completionProvider = new SVCompletionItemProvider();
+
+		clist.concat(completionProvider.provideCompletionItems(doc, _textDocumentPosition.position));
+		//this.connection.console.log('Requested for completion')
+		//let context: CompletionContext = null;
+
+		// if (context.triggerCharacter == '$') {
+		// 	clist.push({
+		// 		label: 'display("");',
+		// 		kind: CompletionItemKind.Text
+		// 	})
+		// 	clist.push({
+		// 		label: 'monitor ',
+		// 		kind: CompletionItemKind.Text
+		// 	})			
+		// }
+		clist.push({
+			label: 'testing',
+			kind: CompletionItemKind.Text
+		});
+		return clist;
 	}
 );
 
