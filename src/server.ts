@@ -5,15 +5,12 @@ import {
 	Diagnostic,
 	ProposedFeatures,
 	InitializeParams,
-	TextDocumentPositionParams,
 	CompletionItem,
 	CompletionItemKind,
 	CompletionParams,
 	CompletionContext,
 	DidChangeTextDocumentParams,
 	DidSaveTextDocumentParams,
-	CompletionTriggerKind,
-	CompletionRequest
 } from 'vscode-languageserver';
 import { SystemVerilogCompiler, compilerType } from './compiling/SystemVerilogCompiler';
 import { ANTLRBackend } from './compiling/ANTLRBackend';
@@ -26,7 +23,6 @@ let connection = createConnection(ProposedFeatures.all);
 // Create a simple text document manager. The text document manager
 // supports full document sync only
 let documents: TextDocuments = new TextDocuments();
-
 let documentCompiler: SystemVerilogCompiler;
 
 /* `configurations` is used to store the workspace's configs */
@@ -59,36 +55,27 @@ connection.onInitialized(async () => {
 /**
  * This handler provides the initial list of the completion items.
  * 
- * @param _textDocumentPosition Describes the location in the text document and the text document
+ * @param completionParams Describes the location in the text document, the text document, and completion context
  */
 connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-	//(_completionparam: CompletionParams): CompletionItem[] => {
-	// The pass parameter contains the position of the text document in
-		// which code complete got requested. For the example we ignore this
-		// info and always provide the same completion items.
+	(completionParams: CompletionParams): CompletionItem[] => {
+
 		var clist: CompletionItem[] = [];
-		var doc = documents.get(_textDocumentPosition.textDocument.uri);
+		var doc = documents.get(completionParams.textDocument.uri);
+		//Create Completion Provider
 		var completionProvider = new SVCompletionItemProvider();
 
-		clist.concat(completionProvider.provideCompletionItems(doc, _textDocumentPosition.position));
-		//this.connection.console.log('Requested for completion')
-		//let context: CompletionContext = null;
-
-		// if (context.triggerCharacter == '$') {
-		// 	clist.push({
-		// 		label: 'display("");',
-		// 		kind: CompletionItemKind.Text
-		// 	})
-		// 	clist.push({
-		// 		label: 'monitor ',
-		// 		kind: CompletionItemKind.Text
-		// 	})			
-		// }
+		//pass in document uri, cursor position, and completion context (trigger kind and character)
+		//list of completion items get returned
+		var to_add = completionProvider.provideCompletionItems(doc, completionParams.position, completionParams.context);
+		clist = clist.concat(to_add);
+		
+		//testing completion item, should be removed later
 		clist.push({
 			label: 'testing',
 			kind: CompletionItemKind.Text
 		});
+
 		return clist;
 	}
 );
