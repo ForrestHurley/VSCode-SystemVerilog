@@ -59,7 +59,7 @@ export class SVCompletionItemProvider {
             case '$':
                 completionItems = completionItems.concat(this.getDollarItems());
             case '.':
-                completionItems = completionItems.concat(this.getFieldItems());
+                completionItems = completionItems.concat(this.getFieldItems(position));
         }
         
         return completionItems;
@@ -83,10 +83,13 @@ export class SVCompletionItemProvider {
         return completionItems;
     }
 
-    private getFieldItems(): CompletionItem[] {
+    private getFieldItems(position: Position): CompletionItem[] {
         let completionItems : CompletionItem[] = [];
         let fieldItems: string[] = [];
-
+        //use passed in position to
+        //find token before "."
+        //get field items using AST
+        //
         fieldItems.forEach(element => {
             completionItems.push(this.constructCompletionItems(element, 'string'));
         });

@@ -11,6 +11,7 @@ import {
 	CompletionContext,
 	DidChangeTextDocumentParams,
 	DidSaveTextDocumentParams,
+	InsertTextFormat,
 } from 'vscode-languageserver';
 import { SystemVerilogCompiler, compilerType } from './compiling/SystemVerilogCompiler';
 import { ANTLRBackend } from './compiling/ANTLRBackend';
@@ -88,10 +89,11 @@ connection.onCompletion(
  */ 
 connection.onCompletionResolve(
 	(item: CompletionItem): CompletionItem => {
-		/*if (item.data === 1) {
-			item.detail = 'TypeScript details';
-			item.documentation = 'TypeScript documentation';
-		} else if (item.data === 2) {
+		if (item.kind === CompletionItemKind.Function) {
+			item.insertTextFormat = InsertTextFormat.Snippet;
+			item.insertText = item.label + `()`;
+		} 
+		/*else if (item.data === 2) {
 			item.detail = 'JavaScript details';
 			item.documentation = 'JavaScript documentation';
 		}*/
