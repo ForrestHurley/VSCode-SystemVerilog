@@ -11,6 +11,7 @@ import {SystemVerilogParser} from './ANTLR/grammar/build/SystemVerilogParser'
 import {SyntaxErrorListener} from './ANTLR/SyntaxErrorListener'
 import { isSystemVerilogDocument, isVerilogDocument, getLineRange } from '../utils/server';
 import { DiagnosticData, isDiagnosticDataUndefined } from "./DiagnosticData";
+import { ASTBuilder } from "./ANTLR/ASTBuilder";
 
 export class ANTLRBackend{
 
@@ -48,6 +49,9 @@ export class ANTLRBackend{
 
             // Parse the input
             let tree = parser.system_verilog_text();
+            
+            let builder = new ASTBuilder();
+            let ast = builder.visit(tree);
 
             //place errors in the diagnostic list
             let diagnosticList = new Array<Diagnostic>();

@@ -776,7 +776,7 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitMethod_identifier?: (ctx: Method_identifierContext) => AbstractNode;
     visitModport_identifier?: (ctx: Modport_identifierContext) => AbstractNode;
     visitModule_identifier(ctx: Module_identifierContext) : AbstractNode {
-        return new AbstractNode();
+        return new IdentifierNode(ctx.text,this.traverseChildren(ctx));
     }
     visitNet_identifier?: (ctx: Net_identifierContext) => AbstractNode;
     visitNet_type_identifier?: (ctx: Net_type_identifierContext) => AbstractNode;
@@ -811,20 +811,21 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitUdp_identifier?: (ctx: Udp_identifierContext) => AbstractNode;
     visitVariable_identifier?: (ctx: Variable_identifierContext) => AbstractNode;
 
-    visitTerminal(node: import("antlr4ts/tree/TerminalNode").TerminalNode): AbstractNode {
-        throw new Error("Method not implemented.");
-    }
+    /*visitTerminal(node: import("antlr4ts/tree/TerminalNode").TerminalNode): AbstractNode {
+        //throw new Error("Method not implemented.");
+        return new AbstractNode();
+    }*/
 
-    visitErrorNode(node: import("antlr4ts/tree/ErrorNode").ErrorNode): AbstractNode {
+    /*visitErrorNode(node: import("antlr4ts/tree/ErrorNode").ErrorNode): AbstractNode {
         throw new Error("Method not implemented.");
-    }
+    }*/
 
-    visitChildren(rule : RuleNode) : AbstractNode {
+    /*visitChildren(rule : RuleNode) : AbstractNode {
         throw new Error("Method not implemented.");
-    }
+    }*/
 
     traverseChildren(tree : ParseTree) : AbstractNode[] {
-        let childArray : AbstractNode[];
+        let childArray = new Array<AbstractNode>();
         for(let i = 0; i < tree.childCount; i++){
             let child = tree.getChild(i);
             let absChild = this.visit(child);
