@@ -52,10 +52,11 @@ program_ansi_header : (attribute_instance )* 'program' ( lifetime )? program_ide
     ( package_import_declaration )* ( parameter_port_list )? ( list_of_port_declarations )? ';' ;
 checker_declaration : 'checker' checker_identifier ( '(' ( checker_port_list )? ')' )? ';'
     ( ( attribute_instance )* checker_or_generate_item )* 'endchecker' ( ':' checker_identifier )? ;
-class_declaration : ( 'virtual' )? 'class' ( lifetime )? class_identifier ( parameter_port_list )?
+class_declaration : virtual_class_modifier 'class' ( lifetime )? class_identifier ( parameter_port_list )?
     ( 'extends' class_type ( '(' list_of_arguments ')' )? )?
     ( 'implements' interface_class_type ( ',' interface_class_type )* )? ';' ( class_item )* 'endclass'
     ( ':' class_identifier)? ;
+virtual_class_modifier : ( 'virtual' )? ;
 interface_class_type : ps_class_identifier ( parameter_value_assignment )? ;
 interface_class_declaration : 'interface' 'class' class_identifier ( parameter_port_list )?
     ( 'extends' interface_class_type ( ',' interface_class_type )* )? ';' ( interface_class_item )*
