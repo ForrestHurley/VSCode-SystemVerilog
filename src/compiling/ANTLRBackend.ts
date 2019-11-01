@@ -7,33 +7,30 @@ import {
 } from "vscode-languageserver";
 import { ANTLRInputStream, CommonTokenStream, ConsoleErrorListener} from 'antlr4ts';
 import {SystemVerilogLexer} from './ANTLR/grammar/build/SystemVerilogLexer'
-import {SystemVerilogParser} from './ANTLR/grammar/build/SystemVerilogParser'
+import {SystemVerilogParser, System_verilog_textContext} from './ANTLR/grammar/build/SystemVerilogParser'
 import {SyntaxErrorListener} from './ANTLR/SyntaxErrorListener'
 import { isSystemVerilogDocument, isVerilogDocument, getLineRange } from '../utils/server';
 import { DiagnosticData, isDiagnosticDataUndefined } from "./DiagnosticData";
 
 export class ANTLRBackend{
+    built_trees: Map<string, System_verilog_textContext>;
+    building_errors: Map<string, SyntaxErrorListener>;
+    currently_parsing: Map<string, boolean>;
 
-    /**
-     * Parse a document with the ANTLR parser and return any diagnostic errors
-     * 
-     * @param document the document to parse
-     * @returns a dictionary of arrays of errors with uri as keys
-     */
-    public async getDiagnostics(document: TextDocument): Promise<Map<string, Diagnostic[]>> {
+    public async parseDocument(document: TextDocument): Promise<void> {
+        this.currently_parsing[document.uri] = true; //works for single threaded async with some assumptions
         return new Promise((resolve, reject) => {
             if (!document) {
                 reject("SystemVerilog: Invalid document.");
+                this.currently_parsing[document.uri] = false;
                 return;
             }
 
             if (!isSystemVerilogDocument(document) && !isVerilogDocument(document)) {
                 reject("The document is not a SystemVerilog/Verilog file.");
+                this.currently_parsing[document.uri] = false;
                 return;
             }
-
-            let visitedDocuments = new Map<string, boolean>();
-            let diagnosticCollection: Map<string, Diagnostic[]> = new Map();
 
             // Create the lexer and parser
             let text = document.getText();
@@ -49,6 +46,25 @@ export class ANTLRBackend{
             // Parse the input
             let tree = parser.system_verilog_text();
 
+            this.built_trees[document.uri] = tree;
+            this.building_errors[document.uri] = syntaxError;
+            this.currently_parsing[document.uri] = false;
+        });
+    }
+
+    /**
+     * Parse a document with the ANTLR parser and return any diagnostic errors
+     * 
+     * @param document the document to parse
+     * @returns a dictionary of arrays of errors with uri as keys
+     */
+    public async getDiagnostics(document: TextDocument): Promise<Map<string, Diagnostic[]>> {
+        return new Promise((resolve, reject) => {
+            //wait for currently_parsing to be true
+            
+
+            let syntaxError = this.building_errors[document.uri];
+            let diagnosticCollection: Map<string, Diagnostic[]> = new Map();
             //place errors in the diagnostic list
             let diagnosticList = new Array<Diagnostic>();
             for (let i = 0; i < syntaxError.error_list.length; i++) {
