@@ -90,14 +90,15 @@ export class ANTLRBackend{
         if (parser_error.msg.startsWith("extraneous input")) {
             out = 'extraneous input "' + parser_error.offendingSymbol.text + '"';
         }
-        // if (parser_error.msg.startsWith("mismatched input")) {
-        //     if (error_count > 1)
-        //         out = ""; //filter out all errors for mismatched input
-        //     else
-        //         out = 'mismatched input "' + parser_error.offendingSymbol.text + '"';
-        // }
-        return out;
+        if (parser_error.msg.startsWith("mismatched input")) {
+            if (error_count > 1)
+                out = ""; //filter out all errors for mismatched input
+            else
+                out = 'mismatched input "' + parser_error.offendingSymbol.text + '"';
+        }
+        return out
     }
+
     /**
         Function for replacing macro uses with their appropriate text
         @param text The text to identify macro definitions and replace macro uses within
@@ -108,7 +109,17 @@ export class ANTLRBackend{
         let defines: [string, string][] = defines_with_text[0];
         let new_text: string = defines_with_text[1];
 
-        return this.replace_defines(new_text, defines);
+        let newer_text:string = this.remove_ifdef_ifndef(new_text);
+        return this.replace_defines(newer_text, defines);
+    }
+
+    /**
+     * Function for removing all ifdef and ifndef blocks from text
+     * @param text The text to remove all ifdef and ifndef blocks from
+     * @returns The text with all ifdef and ifndef blocks removed
+     */
+    private remove_ifdef_ifndef(text: string): string {
+        return text.replace(/(`ifdef|`ifndef)[\s\S]*?`endif/gm, '');
     }
 
     /**
@@ -119,9 +130,14 @@ export class ANTLRBackend{
     private extract_defines(text: string): [[string, string][], string] {
         let current_index: number = text.indexOf('`define');
         let defines: [string, string][] = [];
-        let new_text: string = text.slice(0, current_index);
+        let new_text: string;
+        if (current_index == -1) {
+            new_text = text;
+        } else {
+            new_text = text.slice(0, current_index);
+        }
         while (current_index != -1) {
-            let label: string = text.split(" ", 2)[1];
+            let label: string = text.slice(current_index).split(" ", 2)[1];
             let temp_index: number = text.indexOf('\n', current_index);
             while (temp_index != -1 && text.charAt(temp_index - 1) == '\\') {
                 temp_index = text.indexOf('\n', temp_index + 1);
