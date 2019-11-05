@@ -1,5 +1,5 @@
 import { SystemVerilogVisitor } from "./grammar/build/SystemVerilogVisitor";
-import { AbstractNode, ClassNode} from "./ASTNode";
+import { AbstractNode, ClassNode, FunctionNode} from "./ASTNode";
 import { AbstractParseTreeVisitor } from "antlr4ts/Tree/AbstractParseTreeVisitor";
 import { IdentifierNode, RootNode } from "./ASTNode";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
@@ -335,7 +335,9 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitQueue_dimension?: (ctx: Queue_dimensionContext) => AbstractNode;
     visitUnsized_dimension?: (ctx: Unsized_dimensionContext) => AbstractNode;
     visitFunction_data_type_or_implicit?: (ctx: Function_data_type_or_implicitContext) => AbstractNode;
-    visitFunction_declaration?: (ctx: Function_declarationContext) => AbstractNode;
+    visitFunction_declaration(ctx: Function_declarationContext): AbstractNode {
+        return new FunctionNode(ctx);
+    }
     visitFunction_body_declaration?: (ctx: Function_body_declarationContext) => AbstractNode;
     visitFunction_prototype?: (ctx: Function_prototypeContext) => AbstractNode;
     visitDpi_import_export?: (ctx: Dpi_import_exportContext) => AbstractNode;

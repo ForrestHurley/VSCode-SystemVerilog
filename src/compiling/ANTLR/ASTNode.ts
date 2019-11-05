@@ -1,4 +1,4 @@
-import { Class_declarationContext, Class_itemContext } from "./grammar/build/SystemVerilogParser";
+import { Class_declarationContext, Class_itemContext, Function_declarationContext, Tf_item_declarationContext } from "./grammar/build/SystemVerilogParser";
 
 export class AbstractNode {
 
@@ -50,7 +50,34 @@ export class IdentifierNode extends AbstractNode {
 }
 
 export class FunctionNode extends AbstractNode {
+    private function_identifier: string;
+    private function_type: string;
+    private function_ports: string[];
 
+    constructor(ctx: Function_declarationContext){
+        super();
+        this.function_identifier = ctx.function_body_declaration().function_identifier()[0].text;
+        this.function_type = ctx.function_body_declaration().function_data_type_or_implicit().data_type_or_void() 
+                                    ? ctx.function_body_declaration().function_data_type_or_implicit().data_type_or_void().text
+                                    : ctx.function_body_declaration().function_data_type_or_implicit().implicit_data_type().text;
+        this.function_ports = ctx.function_body_declaration().tf_port_list().tf_port_item().map((val) => { return val.port_identifier().text});
+    }
+
+    public getFunctionIdentifier(): string {
+        return this.function_identifier;
+    }
+
+    public getFunctionType(): string {
+        return this.function_type;
+    }
+
+    public getFunctionPorts(): string[] {
+        return this.function_ports;
+    }
+
+    public isAbstract() {
+        return false;
+    }
 }
 
 export class VariableNode extends AbstractNode {
@@ -84,6 +111,38 @@ export class ClassNode extends AbstractNode {
             this.virtual = false;
         else
             this.virtual = true;
+    }
+
+    public getClassIdentifier(): string {
+        return this.class_identifier;
+    }
+
+    public getParentClass(): string {
+        return this.parent_class;
+    }
+
+    public getInterfaces(): string[] {
+        return this.interfaces;
+    }
+
+    public isVirtual(): boolean {
+        return this.virtual;
+    }
+
+    public getMethods(): FunctionNode[] {
+        return this.methods;
+    }
+
+    public getProperties(): VariableNode[] {
+        return this.properties;
+    }
+
+    public getSubClasses(): ClassNode[] {
+        return this.subclasses;
+    }
+
+    public getConstraints(): ConstraintNode[] {
+        return this.constraints;
     }
 
     public isAbstract() { return false; }
