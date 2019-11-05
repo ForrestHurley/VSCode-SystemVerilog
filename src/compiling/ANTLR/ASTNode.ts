@@ -9,6 +9,46 @@ export class AbstractNode {
     public isAbstract() { return true; }
 }
 
+export class RootNode extends AbstractNode {
+
+    private children : AbstractNode[];
+
+    constructor(children : AbstractNode[]){
+        super();
+        this.children = children;
+    }
+
+    public getChildren() : AbstractNode[] {
+        return this.children;
+    }
+
+    public isAbstract() { return false; }
+
+}
+
+export class IdentifierNode extends AbstractNode {
+
+    private tokenText : string;
+    private children : AbstractNode[];
+
+    constructor(text: string, children? : AbstractNode[]) {
+        super();
+        this.tokenText = text;
+        this.children = children;
+    }
+
+    public isAbstract() { return false; }
+
+    public getText() : string {
+        return this.tokenText;
+    }
+
+    public getChildren() : AbstractNode[] {
+        return this.children;
+    }
+
+}
+
 export class FunctionNode extends AbstractNode {
 
 }
