@@ -147,7 +147,7 @@ import { System_verilog_textContext, Source_textContext, DescriptionContext, Mod
     Ps_identifierContext, Ps_or_hierarchical_array_identifierContext, Ps_or_hierarchical_net_identifierContext, Ps_or_hierarchical_property_identifierContext, 
     Ps_or_hierarchical_sequence_identifierContext, Ps_or_hierarchical_tf_identifierContext, Ps_parameter_identifierContext, Ps_type_identifierContext, 
     Sequence_identifierContext, Signal_identifierContext, Simple_identifierContext, Specparam_identifierContext, Task_identifierContext, Tf_identifierContext, 
-    Terminal_identifierContext, Topmodule_identifierContext, Type_identifierContext, Udp_identifierContext, Variable_identifierContext } from "./grammar/build/SystemVerilogParser";
+    Terminal_identifierContext, Topmodule_identifierContext, Type_identifierContext, Udp_identifierContext, Variable_identifierContext, Include_compiler_directiveContext } from "./grammar/build/SystemVerilogParser";
 
 export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implements SystemVerilogVisitor<AbstractNode> {
     protected defaultResult(): AbstractNode {
@@ -166,6 +166,9 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitInterface_declaration?: (ctx: Interface_declarationContext) => AbstractNode;
     visitInterface_nonansi_header?: (ctx: Interface_nonansi_headerContext) => AbstractNode;
     visitInterface_ansi_header?: (ctx: Interface_ansi_headerContext) => AbstractNode;
+    visitInclude_compiler_directive(ctx: Include_compiler_directiveContext): AbstractNode {
+        return new AbstractNode();
+    }
     visitProgram_declaration?: (ctx: Program_declarationContext) => AbstractNode;
     visitProgram_nonansi_header?: (ctx: Program_nonansi_headerContext) => AbstractNode;
     visitProgram_ansi_header?: (ctx: Program_ansi_headerContext) => AbstractNode;
