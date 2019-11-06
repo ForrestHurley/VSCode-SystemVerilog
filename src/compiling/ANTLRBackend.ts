@@ -7,28 +7,31 @@ import {
 } from "vscode-languageserver";
 import { ANTLRInputStream, CommonTokenStream, ConsoleErrorListener} from 'antlr4ts';
 import {SystemVerilogLexer} from './ANTLR/grammar/build/SystemVerilogLexer'
-import {SystemVerilogParser, System_verilog_textContext} from './ANTLR/grammar/build/SystemVerilogParser'
+import {SystemVerilogParser, System_verilog_textContext, Wait_statementContext} from './ANTLR/grammar/build/SystemVerilogParser'
 import {SyntaxErrorListener} from './ANTLR/SyntaxErrorListener'
 import { isSystemVerilogDocument, isVerilogDocument, getLineRange } from '../utils/server';
 import { DiagnosticData, isDiagnosticDataUndefined } from "./DiagnosticData";
 
 export class ANTLRBackend{
-    built_trees: Map<string, System_verilog_textContext>;
-    building_errors: Map<string, SyntaxErrorListener>;
-    currently_parsing: Map<string, boolean>;
+    built_trees = new Map<string, System_verilog_textContext>();
+    building_errors = new Map<string, SyntaxErrorListener>();
+    currently_parsing = new Map<string, boolean>();
 
     public async parseDocument(document: TextDocument): Promise<void> {
-        this.currently_parsing[document.uri] = true; //works for single threaded async with some assumptions
+        if (this.currently_parsing[document.uri])
+            return new Promise((resolve, reject) => { reject(); });
+        
+        this.currently_parsing[document.uri] = true;
         return new Promise((resolve, reject) => {
             if (!document) {
-                reject("SystemVerilog: Invalid document.");
                 this.currently_parsing[document.uri] = false;
+                reject("SystemVerilog: Invalid document.");
                 return;
             }
 
             if (!isSystemVerilogDocument(document) && !isVerilogDocument(document)) {
-                reject("The document is not a SystemVerilog/Verilog file.");
                 this.currently_parsing[document.uri] = false;
+                reject("The document is not a SystemVerilog/Verilog file.");
                 return;
             }
 
@@ -51,6 +54,7 @@ export class ANTLRBackend{
             this.built_trees[document.uri] = tree;
             this.building_errors[document.uri] = syntaxError;
             this.currently_parsing[document.uri] = false;
+            resolve();
         });
     }
 
@@ -61,9 +65,26 @@ export class ANTLRBackend{
      * @returns a dictionary of arrays of errors with uri as keys
      */
     public async getDiagnostics(document: TextDocument): Promise<Map<string, Diagnostic[]>> {
+        let iterations = 100;
+        let wait_time = 100;
+
+        //wait for currently_parsing to not be true
+        if (!this.built_trees[document.uri] || this.currently_parsing[document.uri]){
+            if (!this.currently_parsing[document.uri]){
+                await this.parseDocument(document);
+            }
+
+            let idx = 0;
+            while(this.currently_parsing[document.uri] && idx < iterations){
+                idx++;
+                await new Promise((r, j)=>setTimeout(r, wait_time));
+            }
+        }
+
+        if (!this.built_trees[document.uri] || this.currently_parsing[document.uri])
+            return new Promise((resolve,reject) => { reject(); });
+
         return new Promise((resolve, reject) => {
-            //wait for currently_parsing to be true
-            
 
             let syntaxError = this.building_errors[document.uri];
             let diagnosticCollection: Map<string, Diagnostic[]> = new Map();
