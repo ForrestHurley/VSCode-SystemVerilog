@@ -1,7 +1,6 @@
 import { SystemVerilogVisitor } from "./grammar/build/SystemVerilogVisitor";
-import { AbstractNode, ClassNode, FunctionNode} from "./ASTNode";
 import { AbstractParseTreeVisitor } from "antlr4ts/Tree/AbstractParseTreeVisitor";
-import { IdentifierNode, RootNode } from "./ASTNode";
+import { AbstractNode, ClassNode, FunctionNode, IdentifierNode, RootNode, IncludeNode } from "./ASTNode";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { RuleNode } from "antlr4ts/tree/RuleNode";
 import { System_verilog_textContext, Source_textContext, DescriptionContext, Module_nonansi_headerContext, Module_ansi_headerContext, 
@@ -167,7 +166,7 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitInterface_nonansi_header?: (ctx: Interface_nonansi_headerContext) => AbstractNode;
     visitInterface_ansi_header?: (ctx: Interface_ansi_headerContext) => AbstractNode;
     visitInclude_compiler_directive(ctx: Include_compiler_directiveContext): AbstractNode {
-        return new AbstractNode();
+        return new IncludeNode(ctx);
     }
     visitProgram_declaration?: (ctx: Program_declarationContext) => AbstractNode;
     visitProgram_nonansi_header?: (ctx: Program_nonansi_headerContext) => AbstractNode;

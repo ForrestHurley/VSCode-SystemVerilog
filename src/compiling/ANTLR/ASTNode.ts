@@ -1,4 +1,4 @@
-import { Class_declarationContext, Class_itemContext, Function_declarationContext, Tf_item_declarationContext } from "./grammar/build/SystemVerilogParser";
+import { Class_declarationContext, Class_itemContext, Function_declarationContext, Tf_item_declarationContext, Include_compiler_directiveContext } from "./grammar/build/SystemVerilogParser";
 
 export class AbstractNode {
 
@@ -24,6 +24,20 @@ export class RootNode extends AbstractNode {
 
     public isAbstract() { return false; }
 
+}
+
+export class IncludeNode extends AbstractNode {
+
+    private file_name : string;
+
+    constructor(ctx: Include_compiler_directiveContext){
+        super();
+        this.file_name = ctx.FILENAME().text.replace(/['"]+/g, '');
+    }
+
+    getFileName(){ return this.file_name; }
+
+    public isAbstract() { return false; }
 }
 
 export class IdentifierNode extends AbstractNode {
@@ -60,7 +74,7 @@ export class FunctionNode extends AbstractNode {
         this.function_type = ctx.function_body_declaration().function_data_type_or_implicit().data_type_or_void() 
                                     ? ctx.function_body_declaration().function_data_type_or_implicit().data_type_or_void().text
                                     : ctx.function_body_declaration().function_data_type_or_implicit().implicit_data_type().text;
-        this.function_ports = ctx.function_body_declaration().tf_port_list().tf_port_item().map((val) => { return val.port_identifier().text});
+        //this.function_ports = ctx.function_body_declaration().tf_port_list().tf_port_item().map((val) => { return val.port_identifier().text});
     }
 
     public getFunctionIdentifier(): string {
@@ -111,6 +125,12 @@ export class ClassNode extends AbstractNode {
             this.virtual = false;
         else
             this.virtual = true;
+        
+        this.methods = new Array<FunctionNode>();
+        items.forEach((val) => {
+            if (val instanceof FunctionNode)
+                this.methods.push(val);
+        });
     }
 
     public getClassIdentifier(): string {
