@@ -7,7 +7,7 @@ import {
 } from "vscode-languageserver";
 import { ANTLRInputStream, CommonTokenStream, ConsoleErrorListener} from 'antlr4ts';
 import {SystemVerilogLexer} from './ANTLR/grammar/build/SystemVerilogLexer'
-import {SystemVerilogParser, System_verilog_textContext, Wait_statementContext} from './ANTLR/grammar/build/SystemVerilogParser'
+import {SystemVerilogParser, System_verilog_textContext} from './ANTLR/grammar/build/SystemVerilogParser'
 import {SyntaxErrorListener} from './ANTLR/SyntaxErrorListener'
 import { isSystemVerilogDocument, isVerilogDocument, getLineRange } from '../utils/server';
 import { DiagnosticData, isDiagnosticDataUndefined } from "./DiagnosticData";
