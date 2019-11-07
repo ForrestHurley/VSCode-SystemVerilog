@@ -44,6 +44,7 @@ connection.onInitialize((params: InitializeParams) => {
 			textDocumentSync: documents.syncKind,
 			completionProvider: {
 				resolveProvider: true,
+				//trigger chars, we can add more or remove one that we don't need
 				triggerCharacters: ['.', ':', '$',' ']
 			}
 		}
@@ -90,10 +91,12 @@ connection.onCompletion(
  */ 
 connection.onCompletionResolve(
 	(item: CompletionItem): CompletionItem => {
+		//for function items append parenthesis at the end when resolving the completion item
+		//so user don't have to type in manually
 		if (item.kind === CompletionItemKind.Function) {
 			item.insertTextFormat = InsertTextFormat.Snippet;
 			item.insertText = item.label + `()`;
-		} 
+		}
 		/*else if (item.data === 2) {
 			item.detail = 'JavaScript details';
 			item.documentation = 'JavaScript documentation';

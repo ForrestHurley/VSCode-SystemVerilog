@@ -1,7 +1,5 @@
 
-import { SystemVerilogIndexer } from '../indexer';
 import {CompletionItem, Position, TextDocument, CancellationToken, CompletionContext, CompletionItemKind, Command } from 'vscode-languageserver';
-import { SystemVerilogSymbol } from '../symbol';
 
 // See test/SymbolKind_icons.png for an overview of the icons
 export function getCompletionItemKind(name: String): CompletionItemKind {
@@ -25,11 +23,11 @@ export function getCompletionItemKind(name: String): CompletionItemKind {
         default: return CompletionItemKind.Reference;
     }
 }
-
+/**
+ * Provides autocomplete items based on trigger character
+ */
 export class SVCompletionItemProvider {
-    //private indexer: SystemVerilogIndexer;
     private globals: CompletionItem[] = [];     
-    //private known_types: CompletionItem[]
 
     constructor() {
         // See CompletionItemKind for overview
@@ -41,12 +39,6 @@ export class SVCompletionItemProvider {
         //     new CompletionItem("parameter"  ,CompletionItemKind.Constant),
         //     new CompletionItem("localparam" ,CompletionItemKind.Constant),
         //     new CompletionItem("logic"      ,CompletionItemKind.Variable),
-
-        // this.known_types = [
-        //     new CompletionItem("input"   ,CompletionItemKind.Interface),
-        //     new CompletionItem("output"  ,CompletionItemKind.Interface),
-        // ];
-
     };
 
     //Entrypoint for getting completion items
@@ -60,20 +52,13 @@ export class SVCompletionItemProvider {
                 completionItems = completionItems.concat(this.getDollarItems());
             case '.':
                 completionItems = completionItems.concat(this.getFieldItems(position));
+            case ' ':
+                //completion items for empty space trigger char
         }
         
         return completionItems;
     };
 
-
-    // Contruct completion item for all system verilog module items
-    private constructModuleItem(symbol: SystemVerilogSymbol): CompletionItem {
-        let completionItem = CompletionItem.create(symbol.name);
-        completionItem.kind = getCompletionItemKind(symbol.containerName);
-        return completionItem;
-    }
-
-    
     private getDollarItems(): CompletionItem[] {
         let completionItems : CompletionItem[] = [];
         let dollaritems: string[] = ['display', 'finish', 'monitor', 'dumpfile', 'support']
@@ -86,11 +71,13 @@ export class SVCompletionItemProvider {
     private getFieldItems(position: Position): CompletionItem[] {
         let completionItems : CompletionItem[] = [];
         let fieldItems: string[] = [];
+        
         //use passed in position to
         //find token before "."
         //get field items using AST
         //
         fieldItems.forEach(element => {
+            //check field type - variable, method
             completionItems.push(this.constructCompletionItems(element, 'string'));
         });
         return completionItems;
