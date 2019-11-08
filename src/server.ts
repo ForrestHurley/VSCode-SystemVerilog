@@ -63,23 +63,23 @@ connection.onInitialized(async () => {
 connection.onCompletion(
 	(completionParams: CompletionParams): CompletionItem[] => {
 
-		var clist: CompletionItem[] = [];
+		var completionList: CompletionItem[] = [];
 		var doc = documents.get(completionParams.textDocument.uri);
 		//Create Completion Provider
 		var completionProvider = new SVCompletionItemProvider();
 
 		//pass in document uri, cursor position, and completion context (trigger kind and character)
 		//list of completion items get returned
-		var to_add = completionProvider.provideCompletionItems(doc, completionParams.position, completionParams.context);
-		clist = clist.concat(to_add);
+		
+		completionList = completionList.concat(completionProvider.provideCompletionItems(doc, completionParams.position, completionParams.context));
 		
 		//testing completion item, should be removed later
-		clist.push({
+		completionList.push({
 			label: 'testing',
 			kind: CompletionItemKind.Text
 		});
 
-		return clist;
+		return completionList;
 	}
 );
 
@@ -97,10 +97,7 @@ connection.onCompletionResolve(
 			item.insertTextFormat = InsertTextFormat.Snippet;
 			item.insertText = item.label + `()`;
 		}
-		/*else if (item.data === 2) {
-			item.detail = 'JavaScript details';
-			item.documentation = 'JavaScript documentation';
-		}*/
+		
 		return item;
 	}
 );

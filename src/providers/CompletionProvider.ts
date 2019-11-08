@@ -30,15 +30,7 @@ export class SVCompletionItemProvider {
     private globals: CompletionItem[] = [];     
 
     constructor() {
-        // See CompletionItemKind for overview
-        this.globals.push ({
-            label: "begin",
-            kind: CompletionItemKind.Module
-        });
-        //     new CompletionItem("end"        ,CompletionItemKind.Module),
-        //     new CompletionItem("parameter"  ,CompletionItemKind.Constant),
-        //     new CompletionItem("localparam" ,CompletionItemKind.Constant),
-        //     new CompletionItem("logic"      ,CompletionItemKind.Variable),
+
     };
 
     //Entrypoint for getting completion items
@@ -61,10 +53,20 @@ export class SVCompletionItemProvider {
 
     private getDollarItems(): CompletionItem[] {
         let completionItems : CompletionItem[] = [];
-        let dollaritems: string[] = ['display', 'finish', 'monitor', 'dumpfile', 'support']
-        dollaritems.forEach(element => {
-            completionItems.push(this.constructCompletionItems(element, 'function'));
-        });
+
+        //more dollar items can be added here, or this list can be extracted in separate file
+        var dollaritems = new Map([
+            [ 'display', 'function'],
+            [ 'finish', 'string'],
+            [ 'monitor', 'function'],
+            ['dumpfile', 'function'],
+            ['support', 'function']
+         ]);
+
+        for (let [key, value] of dollaritems.entries()) {
+            completionItems.push(this.constructCompletionItems(key, value));
+        };
+        
         return completionItems;
     }
 
