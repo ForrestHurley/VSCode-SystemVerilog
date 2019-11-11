@@ -13,6 +13,8 @@ export class RootNode extends AbstractNode {
 
     private children : AbstractNode[];
 
+    uri: string;
+
     constructor(children : AbstractNode[]){
         super();
         this.children = children;

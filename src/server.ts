@@ -13,6 +13,7 @@ import {
 } from 'vscode-languageserver';
 import { SystemVerilogCompiler, compilerType } from './compiling/SystemVerilogCompiler';
 import { ANTLRBackend } from './compiling/ANTLRBackend';
+import { workspace } from 'vscode';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -136,7 +137,7 @@ documents.onDidSave(saveEvent => {
  */
 function verifyDocument(uri: string){
 	if (configurations.get(compilerConfigurationsKeys[3])) { //Check for ANTLR verification being enabled
-		backend.getDiagnostics(documents.get(uri)).then((diagnosticCollection: Map<string, Diagnostic[]>) => {
+		backend.getDiagnostics(documents.get(uri), true).then((diagnosticCollection: Map<string, Diagnostic[]>) => {
 			// Send the computed diagnostics to VSCode for each document
 			for (const [uri, diagnostics] of diagnosticCollection.entries()) {
 				connection.sendDiagnostics({ uri: uri, diagnostics });
