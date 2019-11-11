@@ -99,6 +99,10 @@ export function activate(context: ExtensionContext) {
       closeWindowProgress = true;
     });
 
+    client.onNotification("attemptOpenFile", function (uri: string) {
+      workspace.openTextDocument(uri);
+    });
+
     /* Notify the server that the workspace configuration has been changed */
     workspace.onDidChangeConfiguration(() => {
       client.sendNotification("onDidChangeConfiguration");

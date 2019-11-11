@@ -13,7 +13,6 @@ import {
 } from 'vscode-languageserver';
 import { SystemVerilogCompiler, compilerType } from './compiling/SystemVerilogCompiler';
 import { ANTLRBackend } from './compiling/ANTLRBackend';
-import { workspace } from 'vscode';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -35,7 +34,11 @@ let compilerConfigurationsKeys: string[] = [
 	"systemverilog.verifyOnOpen"
 ];
 
-let backend: ANTLRBackend = new ANTLRBackend();
+function sendOpenNotification(uri: string): void {
+	connection.sendNotification("attemptOpenFile", uri);
+};
+
+let backend: ANTLRBackend = new ANTLRBackend(sendOpenNotification);
 
 connection.onInitialize((params: InitializeParams) => {
 	return {

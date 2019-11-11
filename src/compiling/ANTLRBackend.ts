@@ -12,15 +12,21 @@ import {SyntaxErrorListener} from './ANTLR/SyntaxErrorListener'
 import { isSystemVerilogDocument, isVerilogDocument, getLineRange } from '../utils/server';
 import { DiagnosticData, isDiagnosticDataUndefined } from "./DiagnosticData";
 import { ASTBuilder } from "./ANTLR/ASTBuilder";
-import { RootNode, IncludeNode } from "./ANTLR/ASTNode"
-import { workspace } from 'vscode';
+import { RootNode, IncludeNode } from "./ANTLR/ASTNode";
 import * as path from 'path';
+import { Uri } from "vscode";
 
 export class ANTLRBackend{
     built_parse_trees = new Map<string, System_verilog_textContext>();
     abstract_trees = new Map<string, RootNode>();
     building_errors = new Map<string, SyntaxErrorListener>();
     currently_parsing = new Map<string, boolean>();
+
+    openFunction:Function;
+
+    constructor(openFunction?:Function){
+        this.openFunction = openFunction;
+    }
 
     public async parseDocument(document: TextDocument): Promise<void> {
         if (this.currently_parsing[document.uri])
@@ -76,7 +82,9 @@ export class ANTLRBackend{
         ast.getChildren().forEach(async (val) => {
             if (val instanceof IncludeNode){
                 let include_dir = path.join(path.dirname(ast.uri),val.getFileName());
-                workspace.openTextDocument(include_dir);
+                //workspace.openTextDocument(include_dir);
+                if (this.openFunction)
+                    this.openFunction(include_dir);
             }
         });
     }
