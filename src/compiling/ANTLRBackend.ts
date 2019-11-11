@@ -14,7 +14,6 @@ import { DiagnosticData, isDiagnosticDataUndefined } from "./DiagnosticData";
 import { ASTBuilder } from "./ANTLR/ASTBuilder";
 import { RootNode, IncludeNode } from "./ANTLR/ASTNode";
 import * as path from 'path';
-import { Uri } from "vscode";
 
 export class ANTLRBackend{
     built_parse_trees = new Map<string, System_verilog_textContext>();
@@ -81,10 +80,12 @@ export class ANTLRBackend{
 
         ast.getChildren().forEach(async (val) => {
             if (val instanceof IncludeNode){
-                let include_dir = path.join(
-                    path.dirname(ast.uri),val.getFileName());
-                if (this.openFunction)
-                    this.openFunction(include_dir);
+                let include_dir = path.dirname(ast.uri) + "/" + val.getFileName();
+                if (this.openFunction) {
+                    if (!this.built_parse_trees[include_dir] &&
+                        !this.currently_parsing[include_dir])
+                        this.openFunction(include_dir);
+                }
             }
         });
     }
