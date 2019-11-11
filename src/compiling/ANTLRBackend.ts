@@ -14,12 +14,14 @@ import { DiagnosticData, isDiagnosticDataUndefined } from "./DiagnosticData";
 import { ASTBuilder } from "./ANTLR/ASTBuilder";
 import { RootNode, IncludeNode } from "./ANTLR/ASTNode";
 import * as path from 'path';
+import { IncludeTree } from "./IncludeTree";
 
 export class ANTLRBackend{
     built_parse_trees = new Map<string, System_verilog_textContext>();
     abstract_trees = new Map<string, RootNode>();
     building_errors = new Map<string, SyntaxErrorListener>();
     currently_parsing = new Map<string, boolean>();
+    include_tree = new IncludeTree();
 
     openFunction:Function;
 
@@ -78,9 +80,11 @@ export class ANTLRBackend{
         if (!ast.uri)
             return;
 
-        ast.getChildren().forEach(async (val) => {
+        let include_list:string[] = [];
+        await ast.getChildren().forEach(async (val) => {
             if (val instanceof IncludeNode){
                 let include_dir = path.dirname(ast.uri) + "/" + val.getFileName();
+                include_list.push(include_dir);
                 if (this.openFunction) {
                     if (!this.built_parse_trees[include_dir] &&
                         !this.currently_parsing[include_dir])
@@ -88,6 +92,16 @@ export class ANTLRBackend{
                 }
             }
         });
+
+        this.include_tree.AddOrModifyFile(ast.uri,include_list);
+    }
+
+    public fileIncludesLoaded(uri:string):string {
+        this.include_tree[uri].included_files.foreach((val)=>{
+            if (!this.built_parse_trees[val])
+                return val;
+        })
+        return "";
     }
 
     /**
@@ -137,6 +151,20 @@ export class ANTLRBackend{
                 if (diagnostic.message != "") //If message is blank, ignore it
                     diagnosticList.push(diagnostic);
             }
+
+            let unloaded_include = this.fileIncludesLoaded(document.uri);
+            if (unloaded_include != ""){
+                let range: Range = getLineRange(0, "", 0);
+                let diagnostic = {
+                    severity: DiagnosticSeverity.Warning,
+                    range: range,
+                    message: "Include file not currently loaded by extension. This may lead to incorrect errors: " + unloaded_include,
+                    source: 'systemverilog'
+                };
+
+                diagnosticList.push(diagnostic);
+            }
+
             diagnosticCollection.set(document.uri,diagnosticList);
 
             resolve(diagnosticCollection);
