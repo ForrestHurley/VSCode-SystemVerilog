@@ -100,6 +100,11 @@ export function activate(context: ExtensionContext) {
     });
 
     client.onNotification("attemptOpenFile", function (uri: string) {
+      uri = uri
+      .replace("c%3A","C:")
+      .replace("file:\\","")
+      .replace(/%2520/g," ")
+      .replace(/%20/g, " ");
       workspace.openTextDocument(uri);
     });
 

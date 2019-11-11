@@ -81,8 +81,8 @@ export class ANTLRBackend{
 
         ast.getChildren().forEach(async (val) => {
             if (val instanceof IncludeNode){
-                let include_dir = path.join(path.dirname(ast.uri),val.getFileName());
-                //workspace.openTextDocument(include_dir);
+                let include_dir = path.join(
+                    path.dirname(ast.uri),val.getFileName());
                 if (this.openFunction)
                     this.openFunction(include_dir);
             }
