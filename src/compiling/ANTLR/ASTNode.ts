@@ -1,4 +1,4 @@
-import { Class_declarationContext, Class_itemContext, Function_declarationContext, Tf_item_declarationContext, Include_compiler_directiveContext } from "./grammar/build/SystemVerilogParser";
+import { Class_declarationContext, Class_itemContext, Function_declarationContext, Tf_item_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext } from "./grammar/build/SystemVerilogParser";
 
 export class AbstractNode {
 
@@ -76,7 +76,9 @@ export class FunctionNode extends AbstractNode {
         this.function_type = ctx.function_body_declaration().function_data_type_or_implicit().data_type_or_void() 
                                     ? ctx.function_body_declaration().function_data_type_or_implicit().data_type_or_void().text
                                     : ctx.function_body_declaration().function_data_type_or_implicit().implicit_data_type().text;
-        //this.function_ports = ctx.function_body_declaration().tf_port_list().tf_port_item().map((val) => { return val.port_identifier().text});
+        this.function_ports = ctx.function_body_declaration().tf_port_list()
+                                    ? ctx.function_body_declaration().tf_port_list().tf_port_item().map((val) => { return val.port_identifier().text})
+                                    : [];
     }
 
     public getFunctionIdentifier(): string {
@@ -97,7 +99,20 @@ export class FunctionNode extends AbstractNode {
 }
 
 export class VariableNode extends AbstractNode {
+    
+    private variable_identifier: string;
 
+    constructor(ctx: Variable_decl_assignmentContext){
+        super();
+        if(ctx.variable_identifier()){
+            this.variable_identifier = ctx.variable_identifier()[0].text;
+        }
+    }
+
+    public getVariableIdentifier(): string {
+        return this.variable_identifier;
+    }
+    
 }
 
 export class ConstraintNode extends AbstractNode {

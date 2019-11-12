@@ -1,6 +1,6 @@
 import { SystemVerilogVisitor } from "./grammar/build/SystemVerilogVisitor";
 import { AbstractParseTreeVisitor } from "antlr4ts/Tree/AbstractParseTreeVisitor";
-import { AbstractNode, ClassNode, FunctionNode, IdentifierNode, RootNode, IncludeNode } from "./ASTNode";
+import { AbstractNode, ClassNode, FunctionNode, IdentifierNode, RootNode, IncludeNode, VariableNode } from "./ASTNode";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { RuleNode } from "antlr4ts/tree/RuleNode";
 import { System_verilog_textContext, Source_textContext, DescriptionContext, Module_nonansi_headerContext, Module_ansi_headerContext, 
@@ -327,7 +327,10 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitError_limit_value?: (ctx: Error_limit_valueContext) => AbstractNode;
     visitReject_limit_value?: (ctx: Reject_limit_valueContext) => AbstractNode;
     visitLimit_value?: (ctx: Limit_valueContext) => AbstractNode;
-    visitVariable_decl_assignment?: (ctx: Variable_decl_assignmentContext) => AbstractNode;
+    visitVariable_decl_assignment(ctx: Variable_decl_assignmentContext): AbstractNode {
+        return new VariableNode(ctx);
+    }
+    // Variable Declaration
     visitClass_new?: (ctx: Class_newContext) => AbstractNode;
     visitDynamic_array_new?: (ctx: Dynamic_array_newContext) => AbstractNode;
     visitUnpacked_dimension?: (ctx: Unpacked_dimensionContext) => AbstractNode;
