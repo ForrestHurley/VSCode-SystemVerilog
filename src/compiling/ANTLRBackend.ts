@@ -105,8 +105,8 @@ export class ANTLRBackend{
         @returns The text with macro definitions removed and their uses replaced with the text they represent
     */
     public macroReplace(text: string): string {
-        let defines_with_text: [[string, string][], string] = this.extract_defines(text.replace(/\r\n/g, '\n'));
-        let defines: [string, string][] = defines_with_text[0];
+        let defines_with_text: [[string, string, number][], string] = this.extract_defines(text.replace(/\r\n/g, '\n'));
+        let defines: [string, string, number][] = defines_with_text[0];
         let new_text: string = defines_with_text[1];
 
         let newer_text:string = this.remove_ifdef_ifndef(new_text);
@@ -127,9 +127,9 @@ export class ANTLRBackend{
         @param text The text to identify macro definitions and replace macro uses within
         @returns The array of macro labels and the text they represent, and the full text with the macro definitions removed
     */
-    private extract_defines(text: string): [[string, string][], string] {
+    private extract_defines(text: string): [[string, string, number][], string] {
         let current_index: number = text.indexOf('`define');
-        let defines: [string, string][] = [];
+        let defines: [string, string, number][] = [];
         let new_text: string;
         if (current_index == -1) {
             new_text = text;
@@ -144,7 +144,8 @@ export class ANTLRBackend{
             }
             let value: string = text.slice(text.indexOf(label, current_index) + label.length + 1, temp_index);
             value = value.replace('\\\n', '\n');
-            defines.push([label, value]);
+            let macro_active_from_index: number = new_text.length;
+            defines.push([label, value, macro_active_from_index]);
             current_index = text.indexOf('`define', current_index + 1);
             if (current_index == -1) {
                 new_text = new_text.concat(text.slice(temp_index + 1));
@@ -161,13 +162,29 @@ export class ANTLRBackend{
         @param defines The array of macro labels and the text they represent
         @returns The full text, with macro uses replaced with the text they represent
     */
-    private replace_defines(text: string, defines: [string, string][]): string {
+    private replace_defines(text: string, defines: [string, string, number][]): string {
         let new_text: string = text;
+        let macro_index: number = new_text.lastIndexOf('`');
+        while (macro_index != -1) {
+            // Check if label matches an existing macro label
+            for (let i: number = defines.length - 1; i >= 0; i--) {
+                let define: [string, string, number] = defines[i];
+                if (define[2] <= macro_index && new_text.slice(macro_index + 1, macro_index + 1 + define[0].length) == define[0]) {
+                    // Replace macro
+                    new_text = new_text.slice(0, macro_index) + define[1] + new_text.slice(macro_index + 1 + define[0].length);
+                    break;
+                }
+            }
+            // Get next macro index
+            macro_index = new_text.lastIndexOf('`', macro_index - 1);
+        }
+        /*
         defines.forEach(function (define) {
             while (new_text.indexOf('`'+define[0]) != -1) {
                 new_text = new_text.replace('`' + define[0], define[1]);
             }        
         });
+        */
         return new_text;
     }
 };
