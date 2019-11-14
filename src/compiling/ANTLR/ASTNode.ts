@@ -1,4 +1,4 @@
-import { Class_declarationContext, Class_itemContext, Function_declarationContext, Tf_item_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext } from "./grammar/build/SystemVerilogParser";
+import { Class_declarationContext, Class_itemContext, Function_declarationContext, Tf_item_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext, Constraint_declarationContext, Module_declarationContext } from "./grammar/build/SystemVerilogParser";
 
 export class AbstractNode {
 
@@ -112,11 +112,25 @@ export class VariableNode extends AbstractNode {
     public getVariableIdentifier(): string {
         return this.variable_identifier;
     }
+
+    public isAbstract() { return false; }
     
 }
 
 export class ConstraintNode extends AbstractNode {
 
+    private constraintIdentifier: string;
+
+    constructor(ctx: Constraint_declarationContext) {
+        super();
+        this.constraintIdentifier = ctx.constraint_identifier()[0].text;
+    }
+
+    public getConstraintIdentifier() {
+        return this.constraintIdentifier;
+    }
+
+    public isAbstract() { return false; }
 }
 
 export class ClassNode extends AbstractNode {
@@ -144,9 +158,16 @@ export class ClassNode extends AbstractNode {
             this.virtual = true;
         
         this.methods = new Array<FunctionNode>();
+
         items.forEach((val) => {
             if (val instanceof FunctionNode)
                 this.methods.push(val);
+            if (val instanceof VariableNode)
+                this.properties.push(val);
+            if (val instanceof ClassNode)
+                this.subclasses.push(val);
+            if (val instanceof ConstraintNode)
+                this.constraints.push(val);
         });
     }
 

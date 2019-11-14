@@ -1,8 +1,7 @@
 import { SystemVerilogVisitor } from "./grammar/build/SystemVerilogVisitor";
 import { AbstractParseTreeVisitor } from "antlr4ts/Tree/AbstractParseTreeVisitor";
-import { AbstractNode, ClassNode, FunctionNode, IdentifierNode, RootNode, IncludeNode, VariableNode } from "./ASTNode";
+import { AbstractNode, ClassNode, FunctionNode, IdentifierNode, RootNode, IncludeNode, VariableNode, ConstraintNode } from "./ASTNode";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
-import { RuleNode } from "antlr4ts/tree/RuleNode";
 import { System_verilog_textContext, Source_textContext, DescriptionContext, Module_nonansi_headerContext, Module_ansi_headerContext, 
     Module_declarationContext, Module_keywordContext, Interface_declarationContext, Interface_nonansi_headerContext, Interface_ansi_headerContext, 
     Program_declarationContext, Program_nonansi_headerContext, Program_ansi_headerContext, Checker_declarationContext, Class_declarationContext, 
@@ -160,7 +159,10 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitDescription?: (ctx: DescriptionContext) => AbstractNode;
     visitModule_nonansi_header?: (ctx: Module_nonansi_headerContext) => AbstractNode;
     visitModule_ansi_header?: (ctx: Module_ansi_headerContext) => AbstractNode;
-    visitModule_declaration?: (ctx: Module_declarationContext) => AbstractNode;
+    visitModule_declaration(ctx: Module_declarationContext): AbstractNode {
+        let items = ctx.module_item().map((val) => { return this.visit(val); });
+        return new ModuleNode(ctx, items);
+    }
     visitModule_keyword?: (ctx: Module_keywordContext) => AbstractNode;
     visitInterface_declaration?: (ctx: Interface_declarationContext) => AbstractNode;
     visitInterface_nonansi_header?: (ctx: Interface_nonansi_headerContext) => AbstractNode;
@@ -241,7 +243,9 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitMethod_qualifier?: (ctx: Method_qualifierContext) => AbstractNode;
     visitMethod_prototype?: (ctx: Method_prototypeContext) => AbstractNode;
     visitClass_constructor_declaration?: (ctx: Class_constructor_declarationContext) => AbstractNode;
-    visitConstraint_declaration?: (ctx: Constraint_declarationContext) => AbstractNode;
+    visitConstraint_declaration(ctx: Constraint_declarationContext) : AbstractNode {
+        return new ConstraintNode(ctx);
+    }
     visitConstraint_block?: (ctx: Constraint_blockContext) => AbstractNode;
     visitConstraint_block_item?: (ctx: Constraint_block_itemContext) => AbstractNode;
     visitSolve_before_list?: (ctx: Solve_before_listContext) => AbstractNode;
@@ -854,7 +858,7 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitModport_identifier?: (ctx: Modport_identifierContext) => AbstractNode;
     visitModule_identifier(ctx: Module_identifierContext) : AbstractNode {
         let out = new IdentifierNode(ctx.text,this.traverseChildren(ctx));
-        return out;
+        return new AbstractNode();
     }
     visitNet_identifier?: (ctx: Net_identifierContext) => AbstractNode;
     visitNet_type_identifier?: (ctx: Net_type_identifierContext) => AbstractNode;
