@@ -178,13 +178,6 @@ export class ANTLRBackend{
             // Get next macro index
             macro_index = new_text.lastIndexOf('`', macro_index - 1);
         }
-        /*
-        defines.forEach(function (define) {
-            while (new_text.indexOf('`'+define[0]) != -1) {
-                new_text = new_text.replace('`' + define[0], define[1]);
-            }        
-        });
-        */
         return new_text;
     }
 };
