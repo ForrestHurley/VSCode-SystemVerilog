@@ -5,15 +5,18 @@ import {
 	Diagnostic,
 	ProposedFeatures,
 	InitializeParams,
-	TextDocumentPositionParams,
 	CompletionItem,
 	CompletionItemKind,
+	CompletionParams,
+	CompletionContext,
 	DidChangeTextDocumentParams,
-	DidSaveTextDocumentParams
+	DidSaveTextDocumentParams,
+	InsertTextFormat,
 } from 'vscode-languageserver';
 import { SystemVerilogCompiler, compilerType } from './compiling/SystemVerilogCompiler';
 import { ANTLRBackend } from './compiling/ANTLRBackend';
-
+import { Constant_multiple_concatenationContext } from './compiling/ANTLR/grammar/build/SystemVerilogParser';
+import { SVCompletionItemProvider } from './providers/CompletionProvider';
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 let connection = createConnection(ProposedFeatures.all);
@@ -21,7 +24,6 @@ let connection = createConnection(ProposedFeatures.all);
 // Create a simple text document manager. The text document manager
 // supports full document sync only
 let documents: TextDocuments = new TextDocuments();
-
 let documentCompiler: SystemVerilogCompiler;
 
 /* `configurations` is used to store the workspace's configs */
@@ -41,7 +43,9 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
 			completionProvider: {
-				resolveProvider: true
+				resolveProvider: true,
+				//trigger chars, we can add more or remove one that we don't need
+				triggerCharacters: ['.', ':', '$',' ']
 			}
 		}
 	};
@@ -54,25 +58,28 @@ connection.onInitialized(async () => {
 /**
  * This handler provides the initial list of the completion items.
  * 
- * @param _textDocumentPosition Describes the location in the text document and the text document
+ * @param completionParams Describes the location in the text document, the text document, and completion context
  */
 connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		// The pass parameter contains the position of the text document in
-		// which code complete got requested. For the example we ignore this
-		// info and always provide the same completion items.
-		return [
-			/*{
-				label: 'TypeScript',
-				kind: CompletionItemKind.Text,
-				data: 1
-			},
-			{
-				label: 'JavaScript',
-				kind: CompletionItemKind.Text,
-				data: 2
-			}*/
-		];
+	(completionParams: CompletionParams): CompletionItem[] => {
+
+		var completionList: CompletionItem[] = [];
+		var doc = documents.get(completionParams.textDocument.uri);
+		//Create Completion Provider
+		var completionProvider = new SVCompletionItemProvider();
+
+		//pass in document uri, cursor position, and completion context (trigger kind and character)
+		//list of completion items get returned
+		
+		completionList = completionList.concat(completionProvider.provideCompletionItems(doc, completionParams.position, completionParams.context));
+		
+		//testing completion item, should be removed later
+		completionList.push({
+			label: 'testing',
+			kind: CompletionItemKind.Text
+		});
+
+		return completionList;
 	}
 );
 
@@ -84,13 +91,13 @@ connection.onCompletion(
  */ 
 connection.onCompletionResolve(
 	(item: CompletionItem): CompletionItem => {
-		/*if (item.data === 1) {
-			item.detail = 'TypeScript details';
-			item.documentation = 'TypeScript documentation';
-		} else if (item.data === 2) {
-			item.detail = 'JavaScript details';
-			item.documentation = 'JavaScript documentation';
-		}*/
+		//for function items append parenthesis at the end when resolving the completion item
+		//so user don't have to type in manually
+		if (item.kind === CompletionItemKind.Function) {
+			item.insertTextFormat = InsertTextFormat.Snippet;
+			item.insertText = item.label + `()`;
+		}
+		
 		return item;
 	}
 );

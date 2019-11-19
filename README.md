@@ -5,6 +5,7 @@
 This package adds language support for Verilog/SystemVerilog. It supports SystemVerilog syntax, with planned support for signal intelliSense.
 
 - If you find a bug, or would like a feature; Add it as an [Issue](https://github.com/eirikpre/VSCode-SystemVerilog/issues) or a [Pull-Request](https://github.com/eirikpre/VSCode-SystemVerilog/pulls)
+- You must use run `npm ci` or `npm install` followed by `npm run compile` to build the extension
 
 ## Features
 - Elaborate Syntax Highlighting
@@ -45,6 +46,7 @@ This package adds language support for Verilog/SystemVerilog. It supports System
 
 ## Known Issues
 - Starting up may be a little bit slow if it's a large workspace with many `.sv` files because of indexing
+- If you experience the slowness, use the setting: `systemverilog.forceFastIndexing`
 - `randcase` is not matching with `endcase` brackets properly
 
 ## Future
@@ -55,6 +57,9 @@ This package adds language support for Verilog/SystemVerilog. It supports System
 
 ## Release Notes
 See changelog for mode details
+### 0.9
+- Increased the number of symbols the parser understands.
+- Extensive bug squashing
 ### 0.8
 - Compile an opened document using `Verilator` simulator, display errors/warnings as `Diagnostics` in documents: `oehaddouchi`
 - Compile documents on save feature using `Verilator` simulator
