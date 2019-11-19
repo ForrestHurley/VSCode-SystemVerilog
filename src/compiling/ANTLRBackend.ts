@@ -41,7 +41,6 @@ export class ANTLRBackend{
 
             // Get document text
             let text = document.getText();
-            this.original_text = text;
             // Perform macro replacements
             let new_text = this.macroReplace(text);
             this.parsed_text = new_text;
