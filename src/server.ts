@@ -36,7 +36,11 @@ let compilerConfigurationsKeys: string[] = [
 	"systemverilog.verifyOnOpen"
 ];
 
-let backend: ANTLRBackend = new ANTLRBackend();
+function sendOpenNotification(uri: string): void {
+	connection.sendNotification("attemptOpenFile", uri);
+};
+
+let backend: ANTLRBackend = new ANTLRBackend(sendOpenNotification);
 
 connection.onInitialize((params: InitializeParams) => {
 	return {
@@ -143,7 +147,7 @@ documents.onDidSave(saveEvent => {
  */
 function verifyDocument(uri: string){
 	if (configurations.get(compilerConfigurationsKeys[3])) { //Check for ANTLR verification being enabled
-		backend.getDiagnostics(documents.get(uri)).then((diagnosticCollection: Map<string, Diagnostic[]>) => {
+		backend.getDiagnostics(documents.get(uri), true).then((diagnosticCollection: Map<string, Diagnostic[]>) => {
 			// Send the computed diagnostics to VSCode for each document
 			for (const [uri, diagnostics] of diagnosticCollection.entries()) {
 				connection.sendDiagnostics({ uri: uri, diagnostics });

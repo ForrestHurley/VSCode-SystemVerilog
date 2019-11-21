@@ -99,6 +99,16 @@ export function activate(context: ExtensionContext) {
       closeWindowProgress = true;
     });
 
+    client.onNotification("attemptOpenFile", function (uri: string) {
+      uri = uri
+      .replace("c%3A","C:")
+      .replace("file%3A","")
+      .replace("file:","")
+      .replace(/%2520/g," ")
+      .replace(/%20/g, " ");
+      workspace.openTextDocument(uri);
+    });
+
     /* Notify the server that the workspace configuration has been changed */
     workspace.onDidChangeConfiguration(() => {
       client.sendNotification("onDidChangeConfiguration");
