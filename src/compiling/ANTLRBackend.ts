@@ -7,14 +7,15 @@ import {
 } from "vscode-languageserver";
 import { ANTLRInputStream, CommonTokenStream, ConsoleErrorListener} from 'antlr4ts';
 import {SystemVerilogLexer} from './ANTLR/grammar/build/SystemVerilogLexer'
-import {SystemVerilogParser, System_verilog_textContext} from './ANTLR/grammar/build/SystemVerilogParser'
+import {SystemVerilogParser, System_verilog_textContext, Specify_output_terminal_descriptorContext} from './ANTLR/grammar/build/SystemVerilogParser'
 import {SyntaxErrorListener} from './ANTLR/SyntaxErrorListener'
 import { isSystemVerilogDocument, isVerilogDocument, getLineRange } from '../utils/server';
 import { DiagnosticData, isDiagnosticDataUndefined } from "./DiagnosticData";
 import { ASTBuilder } from "./ANTLR/ASTBuilder";
 import { RootNode, IncludeNode } from "./ANTLR/ASTNode";
 import * as path from 'path';
-import { IncludeTree } from "./IncludeTree";
+import { IncludeTree, IncludeFile } from "./IncludeTree";
+import { resolve } from "dns";
 
 export class ANTLRBackend{
     built_parse_trees = new Map<string, System_verilog_textContext>();
@@ -27,9 +28,11 @@ export class ANTLRBackend{
     translation_info: [number, number, number][] = [];
 
     openFunction:Function;
+    verifyFunction:Function;
 
-    constructor(openFunction?:Function){
+    constructor(openFunction?:Function,verifyFunction?:Function){
         this.openFunction = openFunction;
+        this.verifyFunction = verifyFunction;
     }
 
     /**
@@ -91,7 +94,7 @@ export class ANTLRBackend{
             return;
 
         let include_set:Set<string> = new Set<string>();
-        await ast.getChildren().forEach(async (val) => {
+        ast.getChildren().forEach((val) => {
             if (val instanceof IncludeNode){
                 let include_dir = path.dirname(ast.uri) + "/" + val.getFileName();
                 include_set.add(include_dir);
@@ -104,6 +107,12 @@ export class ANTLRBackend{
         });
 
         this.include_tree.AddOrModifyFile(ast.uri,include_set);
+
+        this.include_tree[ast.uri].including_files.forEach((val:string) => {
+            this.verifyFunction(val);
+        });
+
+        return new Promise((resolve) => resolve());
     }
 
     public fileIncludesUnloaded(uri:string):string {
@@ -120,13 +129,19 @@ export class ANTLRBackend{
             return getLineRange(0,"",0);
 
         let minimum_line = 1000;
+        let out_range = getLineRange(0,"",0);
         this.abstract_trees[uri].getChildren().forEach(async (val) => {
             if (val instanceof IncludeNode){
-
+                if(val.getRange().start.line < minimum_line) {
+                    minimum_line = val.getRange().start.line;
+                    out_range = val.getRange();
+                    out_range.start.line -= 1;
+                    out_range.end.line -= 1;
+                }
             }
         });
 
-        return getLineRange(0,"",0);
+        return out_range;
     }
 
     /**
@@ -179,7 +194,7 @@ export class ANTLRBackend{
 
             let unloaded_include = this.fileIncludesUnloaded(document.uri);
             if (unloaded_include != ""){
-                let range: Range = getLineRange(0, "", 0);
+                let range: Range = this.findFirstInclude(document.uri);
                 let diagnostic = {
                     severity: DiagnosticSeverity.Warning,
                     range: range,

@@ -33,13 +33,13 @@ export class IncludeTree extends Map<string,IncludeFile>{
 
         remove_diff.forEach((val:string) => {
             if (this[val])
-                this[val].including_files.delete(val);
+                this[val].including_files.delete(file_name);
         });
         add_diff.forEach((val:string) => {
             if (!this[val])
                 this[val] = new IncludeFile(val);
 
-            this[val].including_files.add(val);
+            this[val].including_files.add(file_name);
         });
     }
 

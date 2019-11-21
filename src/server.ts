@@ -40,7 +40,7 @@ function sendOpenNotification(uri: string): void {
 	connection.sendNotification("attemptOpenFile", uri);
 };
 
-let backend: ANTLRBackend = new ANTLRBackend(sendOpenNotification);
+let backend: ANTLRBackend = new ANTLRBackend(sendOpenNotification,verifyDocument);
 
 connection.onInitialize((params: InitializeParams) => {
 	return {
