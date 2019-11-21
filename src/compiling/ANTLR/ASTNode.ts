@@ -206,9 +206,8 @@ export class ModuleNode extends AbstractNode {
         this.ports = new Array<PortNode>();
         this.variables = new Array<VariableNode>();
         this.nets = new Array<NetNode>();
-        if(ctx.module_identifier()[0]){
-            this.module_identifier = ctx.module_identifier()[0].text;
-        }
+        this.module_identifier = ctx.module_ansi_header() ? ctx.module_ansi_header().module_identifier().text
+                                                          : ctx.module_nonansi_header().module_identifier().text;
         items.forEach((val) => {
             if(val instanceof PortNode)
                 this.ports.push(val);

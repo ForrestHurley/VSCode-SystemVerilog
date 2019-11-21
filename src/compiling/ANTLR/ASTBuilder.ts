@@ -161,7 +161,6 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitModule_nonansi_header?: (ctx: Module_nonansi_headerContext) => AbstractNode;
     visitModule_ansi_header?: (ctx: Module_ansi_headerContext) => AbstractNode;
     visitModule_declaration(ctx: Module_declarationContext): AbstractNode {
-        //let items = ctx.module_item().map((val) => { return this.visit(val); });
         let items: AbstractNode[] = new Array<AbstractNode>();
         ctx.module_item().forEach((val) => {
             items = items.concat(this.traverseChildren(val));
