@@ -90,11 +90,11 @@ export class ANTLRBackend{
         if (!ast.uri)
             return;
 
-        let include_list:string[] = [];
+        let include_set:Set<string> = new Set<string>();
         await ast.getChildren().forEach(async (val) => {
             if (val instanceof IncludeNode){
                 let include_dir = path.dirname(ast.uri) + "/" + val.getFileName();
-                include_list.push(include_dir);
+                include_set.add(include_dir);
                 if (this.openFunction) {
                     if (!this.built_parse_trees[include_dir] &&
                         !this.currently_parsing[include_dir])
@@ -103,15 +103,16 @@ export class ANTLRBackend{
             }
         });
 
-        this.include_tree.AddOrModifyFile(ast.uri,include_list);
+        this.include_tree.AddOrModifyFile(ast.uri,include_set);
     }
 
-    public fileIncludesLoaded(uri:string):string {
-        this.include_tree[uri].included_files.foreach((val)=>{
-            if (!this.built_parse_trees[val])
-                return val;
+    public fileIncludesUnloaded(uri:string):string {
+        if (!this.include_tree[uri])
+            return "";
+        let out = this.include_tree.GetAllIncludes(uri).filter((val)=>{
+            return !this.built_parse_trees[val]
         })
-        return "";
+        return out.join(" ");
     }
 
     /**
@@ -162,7 +163,7 @@ export class ANTLRBackend{
                     diagnosticList.push(diagnostic);
             }
 
-            let unloaded_include = this.fileIncludesLoaded(document.uri);
+            let unloaded_include = this.fileIncludesUnloaded(document.uri);
             if (unloaded_include != ""){
                 let range: Range = getLineRange(0, "", 0);
                 let diagnostic = {
