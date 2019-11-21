@@ -115,6 +115,20 @@ export class ANTLRBackend{
         return out.join(" ");
     }
 
+    public findFirstInclude(uri:string):Range {
+        if (!this.abstract_trees[uri])
+            return getLineRange(0,"",0);
+
+        let minimum_line = 1000;
+        this.abstract_trees[uri].getChildren().forEach(async (val) => {
+            if (val instanceof IncludeNode){
+
+            }
+        });
+
+        return getLineRange(0,"",0);
+    }
+
     /**
      * Parse a document with the ANTLR parser and return any diagnostic errors
      * 

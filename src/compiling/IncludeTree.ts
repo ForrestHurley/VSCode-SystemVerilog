@@ -44,7 +44,18 @@ export class IncludeTree extends Map<string,IncludeFile>{
     }
 
     public GetAllIncludes(file_name: string): string[]{
-        return [];
+        if (!this[file_name])
+            return [];
+
+        let include_list:string[] = [...this[file_name].included_files];
+
+        this[file_name].included_files.forEach((val:string) => {
+            include_list.concat(this.GetAllIncludes(val));
+        });
+
+        //Remove duplicates
+        let out = Array.from(new Set<string>(include_list).keys());
+        return out;
     }
     
 }
