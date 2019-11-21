@@ -32,7 +32,7 @@ export class ANTLRBackend{
             return new Promise((resolve, reject) => { reject(); });
         
         this.currently_parsing[document.uri] = true;
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             if (!document) {
                 this.currently_parsing[document.uri] = false;
                 reject("SystemVerilog: Invalid document.");
@@ -64,7 +64,7 @@ export class ANTLRBackend{
             let builder = new ASTBuilder();
             let ast = builder.visit(tree) as RootNode;
             ast.uri = document.uri;
-            this.loadIncludes(ast);
+            await this.loadIncludes(ast);
 
             this.built_parse_trees[document.uri] = tree;
             this.abstract_trees[document.uri] = ast;
