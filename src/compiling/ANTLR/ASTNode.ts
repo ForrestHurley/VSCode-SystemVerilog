@@ -2,6 +2,7 @@ import { Class_declarationContext, Function_declarationContext, Include_compiler
 import { Token } from "antlr4ts/Token";
 import { ParserRuleContext } from "antlr4ts";
 import { Range, Position } from "vscode-languageserver-types";
+import { Override } from "antlr4ts/Decorators";
 
 export class AbstractNode {
 
@@ -35,6 +36,8 @@ export class AbstractNode {
             end: Position.create(this.stop.line, this.stop.charPositionInLine ),
         }
     }
+
+    //public getIdentifier?: () => string;
 }
 
 export class ConstraintNode extends AbstractNode {
@@ -199,13 +202,11 @@ export class ModuleNode extends AbstractNode {
     private module_identifier: string;
     private ports: PortNode[];
     private variables: VariableNode[];
-    private nets: NetNode[];
     
     constructor(ctx: Module_declarationContext, items: AbstractNode[], nonPorts: AbstractNode[]) {
         super(ctx);
         this.ports = new Array<PortNode>();
         this.variables = new Array<VariableNode>();
-        this.nets = new Array<NetNode>();
         this.module_identifier = ctx.module_ansi_header() ? ctx.module_ansi_header().module_identifier().text
                                                           : ctx.module_nonansi_header().module_identifier().text;
         items.forEach((val) => {
@@ -213,16 +214,12 @@ export class ModuleNode extends AbstractNode {
                 this.ports.push(val);
             if(val instanceof VariableNode)
                 this.variables.push(val);
-            if(val instanceof NetNode)
-                this.nets.push(val);
         });
         nonPorts.forEach((val) => {
             if(val instanceof PortNode)
                 this.ports.push(val);
             if(val instanceof VariableNode)
                 this.variables.push(val);
-            if(val instanceof NetNode)
-                this.nets.push(val);
         })
     }
 
@@ -233,30 +230,31 @@ export class ModuleNode extends AbstractNode {
     public isAbstract() { return false; }
 }
 
-export class NetNode extends AbstractNode {
+// export class NetNode extends AbstractNode {
     
-    private identifier: string;
+//     private identifier: string;
 
-    constructor(ctx: Net_decl_assignmentContext){
-        super(ctx);
-        this.identifier = ctx.net_identifier().text;
-    }
+//     constructor(ctx: Net_decl_assignmentContext){
+//         super(ctx);
+//         this.identifier = ctx.net_identifier().text;
+//     }
 
-    public getIdentifier(): string {
-        return this.identifier;
-    }
+//     public getIdentifier(): string {
+//         return this.identifier;
+//     }
 
-    public isAbstract() { return false };
+//     public isAbstract() { return false };
 
-}
+// }
 
 export class PortNode extends AbstractNode {
 
     private portIdentifier: string;
     
-    constructor(ctx: Port_identifierContext) {
+    constructor(ctx: Port_identifierContext | Net_decl_assignmentContext) {
         super(ctx);
-        this.portIdentifier = ctx.text;
+        this.portIdentifier = ctx instanceof Net_decl_assignmentContext ? ctx.net_identifier().text
+                                                                        : ctx.text;
     }
 
     public isAbstract() { return false; }

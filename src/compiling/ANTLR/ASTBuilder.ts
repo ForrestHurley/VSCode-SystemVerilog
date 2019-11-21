@@ -1,6 +1,6 @@
 import { SystemVerilogVisitor } from "./grammar/build/SystemVerilogVisitor";
 import { AbstractParseTreeVisitor } from "antlr4ts/Tree/AbstractParseTreeVisitor";
-import { AbstractNode, ClassNode, FunctionNode, IdentifierNode, RootNode, IncludeNode, VariableNode, ConstraintNode, ModuleNode, PortNode, NetNode } from "./ASTNode";
+import { AbstractNode, ClassNode, FunctionNode, RootNode, IncludeNode, VariableNode, ConstraintNode, ModuleNode, PortNode } from "./ASTNode";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { System_verilog_textContext, Source_textContext, DescriptionContext, Module_nonansi_headerContext, Module_ansi_headerContext, 
     Module_declarationContext, Module_keywordContext, Interface_declarationContext, Interface_nonansi_headerContext, Interface_ansi_headerContext, 
@@ -335,7 +335,7 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitList_of_variable_port_identifiers?: (ctx: List_of_variable_port_identifiersContext) => AbstractNode;
     visitDefparam_assignment?: (ctx: Defparam_assignmentContext) => AbstractNode;
     visitNet_decl_assignment(ctx: Net_decl_assignmentContext):AbstractNode {
-        return new NetNode(ctx);
+        return new PortNode(ctx);
     }
     visitParam_assignment?: (ctx: Param_assignmentContext) => AbstractNode;
     visitSpecparam_assignment?: (ctx: Specparam_assignmentContext) => AbstractNode;
