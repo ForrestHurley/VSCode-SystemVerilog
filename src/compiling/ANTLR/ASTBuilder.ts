@@ -357,10 +357,16 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitQueue_dimension?: (ctx: Queue_dimensionContext) => AbstractNode;
     visitUnsized_dimension?: (ctx: Unsized_dimensionContext) => AbstractNode;
     visitFunction_data_type_or_implicit?: (ctx: Function_data_type_or_implicitContext) => AbstractNode;
-    visitFunction_declaration(ctx: Function_declarationContext): FunctionNode {
-        return new FunctionNode(ctx);
+    visitFunction_declaration(ctx: Function_declarationContext): AbstractNode {
+        return new AbstractNode();
     }
-    visitFunction_body_declaration?: (ctx: Function_body_declarationContext) => AbstractNode;
+    visitFunction_body_declaration(ctx: Function_body_declarationContext): AbstractNode {
+        let tfitems: AbstractNode[] = new Array<AbstractNode>();
+        ctx.tf_item_declaration().forEach((val) => {
+            tfitems = tfitems.concat(this.traverseChildren(val));
+        });
+        return new FunctionNode(ctx, tfitems);
+    }
     visitFunction_prototype?: (ctx: Function_prototypeContext) => AbstractNode;
     visitDpi_import_export?: (ctx: Dpi_import_exportContext) => AbstractNode;
     visitDpi_spec_string?: (ctx: Dpi_spec_stringContext) => AbstractNode;
