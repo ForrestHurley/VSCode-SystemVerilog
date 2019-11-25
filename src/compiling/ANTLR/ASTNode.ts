@@ -1,4 +1,4 @@
-import { Class_declarationContext, Function_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext, Constraint_declarationContext, Module_declarationContext, System_verilog_textContext, IdentifierContext, Port_identifierContext, Net_decl_assignmentContext } from "./grammar/build/SystemVerilogParser";
+import { Class_declarationContext, Function_body_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext, Constraint_declarationContext, Module_declarationContext, System_verilog_textContext, IdentifierContext, Port_identifierContext, Net_decl_assignmentContext } from "./grammar/build/SystemVerilogParser";
 import { Token } from "antlr4ts/Token";
 import { ParserRuleContext } from "antlr4ts";
 import { Range, Position } from "vscode-languageserver-types";
@@ -46,7 +46,7 @@ export class ConstraintNode extends AbstractNode {
 
     constructor(ctx: Constraint_declarationContext) {
         super(ctx);
-        this.constraintIdentifier = ctx.constraint_identifier()[0].text;
+        this.constraintIdentifier = ctx.constraint_identifier().text;
     }
 
     public getIdentifier() {
@@ -136,30 +136,20 @@ export class ClassNode extends AbstractNode {
 
 export class FunctionNode extends AbstractNode {
     private function_identifier: string;
-    private function_type: string;
-    private function_ports: string[];
+    private ports: PortNode[];
 
-    constructor(ctx: Function_declarationContext){
+    constructor(ctx: Function_body_declarationContext, tfItems: AbstractNode[]){
         super(ctx);
-        this.function_identifier = ctx.function_body_declaration().function_identifier()[0].text;
-        this.function_type = ctx.function_body_declaration().function_data_type_or_implicit().data_type_or_void() 
-                                    ? ctx.function_body_declaration().function_data_type_or_implicit().data_type_or_void().text
-                                    : ctx.function_body_declaration().function_data_type_or_implicit().implicit_data_type().text;
-        this.function_ports = ctx.function_body_declaration().tf_port_list()
-                                    ? ctx.function_body_declaration().tf_port_list().tf_port_item().map((val) => { return val.port_identifier().text})
-                                    : [];
+        this.ports = new Array<PortNode>();
+        tfItems.forEach((val) => {
+            if(val instanceof PortNode)
+                this.ports.push(val);
+        })
+        this.function_identifier = ctx.function_identifier(0).text;
     }
 
     public getIdentifier(): string {
         return this.function_identifier;
-    }
-
-    public getFunctionType(): string {
-        return this.function_type;
-    }
-
-    public getFunctionPorts(): string[] {
-        return this.function_ports;
     }
 
     public isAbstract() {
@@ -208,7 +198,8 @@ export class ModuleNode extends AbstractNode {
         this.ports = new Array<PortNode>();
         this.variables = new Array<VariableNode>();
         this.module_identifier = ctx.module_ansi_header() ? ctx.module_ansi_header().module_identifier().text
-                                                          : ctx.module_nonansi_header().module_identifier().text;
+                                                          : ctx.module_nonansi_header() ? ctx.module_nonansi_header().module_identifier().text
+                                                                                        : "";
         items.forEach((val) => {
             if(val instanceof PortNode)
                 this.ports.push(val);
@@ -229,23 +220,6 @@ export class ModuleNode extends AbstractNode {
 
     public isAbstract() { return false; }
 }
-
-// export class NetNode extends AbstractNode {
-    
-//     private identifier: string;
-
-//     constructor(ctx: Net_decl_assignmentContext){
-//         super(ctx);
-//         this.identifier = ctx.net_identifier().text;
-//     }
-
-//     public getIdentifier(): string {
-//         return this.identifier;
-//     }
-
-//     public isAbstract() { return false };
-
-// }
 
 export class PortNode extends AbstractNode {
 
