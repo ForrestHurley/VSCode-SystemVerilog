@@ -42,6 +42,7 @@ LOWER_NS : [n][s] ;
 LOWER_PS : [p][s] ;
 LOWER_FS : [f][s] ;
 HEX_DIGIT : [a-fA-F] ;
+HEX_VALUE : [a-fA-F] ( [a-fA-F0-9_] )* ;
 X_DIGIT : [xX] ;
 Z_DIGIT : [zZ] ;
 UNDERSCORE : [_] ;
