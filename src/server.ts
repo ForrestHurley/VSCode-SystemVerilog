@@ -76,12 +76,6 @@ connection.onCompletion(
 		//list of completion items get returned
 		
 		completionList = completionList.concat(completionProvider.provideCompletionItems(doc, completionParams.position, completionParams.context));
-		
-		//testing completion item, should be removed later
-		completionList.push({
-			label: 'testing',
-			kind: CompletionItemKind.Text
-		});
 
 		return completionList;
 	}

@@ -1,5 +1,8 @@
 import {ANTLRBackend} from '../compiling/ANTLRBackend';
 import {Range, CompletionItem, Position, TextDocument, CancellationToken, CompletionContext, CompletionItemKind, Command } from 'vscode-languageserver';
+import { ASTUtils } from "../compiling/ANTLR/ASTUtils"
+import { type } from 'os';
+import { PortNode } from '../compiling/ANTLR/ASTNode';
 
 // See test/SymbolKind_icons.png for an overview of the icons
 export function getCompletionItemKind(name: String): CompletionItemKind {
@@ -83,10 +86,14 @@ export class SVCompletionItemProvider {
         let uri = document.uri.toString();
         let ast = this.backend.abstract_trees[uri];
         
-        let end = document.positionAt(document.offsetAt(position) - 1);
-        let start = document.positionAt(document.offsetAt(position) - 4);
-        let range = Range.create(start, end);
-        document.getText(range);
+        let loc = document.positionAt(document.offsetAt(position)-2);
+        let range = Range.create(loc,loc);
+
+        let node = ASTUtils.findNodeFromRange(range,ast);
+
+        if (node instanceof PortNode){
+            
+        }
         
         // this.backend.abstract_trees[uri].children[*]
         // ast.entries.forEach(entry => {

@@ -26,7 +26,7 @@ export class AbstractNode {
     }
 
     public getChildren(): AbstractNode[] {
-        return new AbstractNode[0]();
+        return new Array<AbstractNode>();
     }
 
     public getRange(): Range {
