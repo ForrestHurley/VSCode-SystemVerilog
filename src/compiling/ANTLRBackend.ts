@@ -85,6 +85,11 @@ export class ANTLRBackend{
             this.abstract_trees[document.uri] = ast;
             this.building_errors[document.uri] = syntaxError;
             this.currently_parsing[document.uri] = false;
+
+            this.include_tree[document.uri].including_files.forEach((val:string) => {
+                this.verifyFunction(val,false);
+            });
+
             resolve();
         });
     }
@@ -107,10 +112,6 @@ export class ANTLRBackend{
         });
 
         this.include_tree.AddOrModifyFile(ast.uri,include_set);
-
-        this.include_tree[ast.uri].including_files.forEach((val:string) => {
-            this.verifyFunction(val);
-        });
 
         return new Promise((resolve) => resolve());
     }

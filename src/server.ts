@@ -145,9 +145,9 @@ documents.onDidSave(saveEvent => {
  * 
  * @param uri The universal resource indicator for the document to verify
  */
-function verifyDocument(uri: string){
+function verifyDocument(uri: string, rebuilding: boolean = true){
 	if (configurations.get(compilerConfigurationsKeys[3])) { //Check for ANTLR verification being enabled
-		backend.getDiagnostics(documents.get(uri), true).then((diagnosticCollection: Map<string, Diagnostic[]>) => {
+		backend.getDiagnostics(documents.get(uri), rebuilding).then((diagnosticCollection: Map<string, Diagnostic[]>) => {
 			// Send the computed diagnostics to VSCode for each document
 			for (const [uri, diagnostics] of diagnosticCollection.entries()) {
 				connection.sendDiagnostics({ uri: uri, diagnostics });
