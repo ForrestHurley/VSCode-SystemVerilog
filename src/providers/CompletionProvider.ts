@@ -57,9 +57,9 @@ export class SVCompletionItemProvider {
 
         //more dollar items can be added here, or this list can be extracted in separate file
         var dollaritems = new Map([
-            [ 'display', 'function'],
-            [ 'finish', 'string'],
-            [ 'monitor', 'function'],
+            ['display', 'function'],
+            ['finish', 'string'],
+            ['monitor', 'function'],
             ['dumpfile', 'function'],
             ['support', 'function']
          ]);
