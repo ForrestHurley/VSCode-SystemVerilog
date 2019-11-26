@@ -185,7 +185,7 @@ export class ANTLRBackend{
                 let diagnostic = {
                     severity: DiagnosticSeverity.Error,
                     range: range,
-                    message: this.getImprovedMessage(syntaxError.error_list[i],document.uri,syntaxError.error_list.length),
+                    message: this.getImprovedMessage(syntaxError.error_list[i],document.uri,i+1),
                     source: 'systemverilog'
                 };
 
@@ -303,7 +303,7 @@ export class ANTLRBackend{
                 // Add removal of ifdef to translation_info
                 this.translation_info.push([def_start_location - 1, def_end_location + '`endif'.length - def_start_location, -1]);
                 // Remove ifdef block
-                let next_def: number = new_text.indexOf('`ifdef', def_end_location + '`endif'.length)
+                let next_def: number = new_text.indexOf('`ifndef', def_end_location + '`endif'.length)
                 if (next_def == -1) {
                     newer_text = newer_text.concat(new_text.slice(def_end_location + '`endif'.length));
                     break;
@@ -311,7 +311,7 @@ export class ANTLRBackend{
                     newer_text = newer_text.concat(new_text.slice(def_end_location + '`endif'.length, next_def));
                 }
             }
-            def_start_location = new_text.indexOf('`ifdef', def_end_location + '`endif'.length);
+            def_start_location = new_text.indexOf('`ifndef', def_end_location + '`endif'.length);
         }
         return newer_text;
     }
@@ -374,6 +374,10 @@ export class ANTLRBackend{
                     new_text = new_text.slice(0, macro_index) + define[1] + new_text.slice(macro_index + 1 + define[0].length);
                     break;
                 }
+            }
+            // Break if last '`' was the first character 
+            if (macro_index == 0) {
+                break;
             }
             // Get next macro index
             macro_index = new_text.lastIndexOf('`', macro_index - 1);

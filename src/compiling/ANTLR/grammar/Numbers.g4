@@ -20,7 +20,7 @@ exp : EXP ;
 unsigned_number : decimal_digit ( UNDERSCORE | decimal_digit )* ;
 binary_value : binary_digit ( UNDERSCORE | binary_digit )* ;
 octal_value : octal_digit ( UNDERSCORE | octal_digit )* ;
-hex_value : hex_digit ( UNDERSCORE | hex_digit )* ;
+hex_value : hex_digit ( ( UNDERSCORE | hex_digit )* | HEX_VALUE ) | HEX_VALUE ;
 decimal_base : DECIMAL_BASE ;
 binary_base : BINARY_BASE ;
 octal_base : OCTAL_BASE ;

@@ -4,7 +4,7 @@ import LexRules;
 array_identifier : identifier ;
 block_identifier : identifier ;
 bin_identifier : identifier ;
-c_identifier : C_IDENTIFIER | LOWER_S | LOWER_MS | LOWER_US | LOWER_NS | LOWER_PS | LOWER_FS | B | F | R | P | N | HEX_DIGIT | X_DIGIT | Z_DIGIT | UNDERSCORE ;
+c_identifier : C_IDENTIFIER | LOWER_S | LOWER_MS | LOWER_US | LOWER_NS | LOWER_PS | LOWER_FS | B | F | R | P | N | HEX_DIGIT | HEX_VALUE | X_DIGIT | Z_DIGIT | UNDERSCORE ;
 cell_identifier : identifier ;
 checker_identifier : identifier ;
 class_identifier : identifier ;
