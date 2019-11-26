@@ -1,8 +1,7 @@
-import { Class_declarationContext, Function_body_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext, Constraint_declarationContext, Module_declarationContext, System_verilog_textContext, IdentifierContext, Port_identifierContext, Net_decl_assignmentContext } from "./grammar/build/SystemVerilogParser";
+import { Class_declarationContext, Function_body_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext, Constraint_declarationContext, Module_declarationContext, System_verilog_textContext, IdentifierContext, Port_identifierContext, Net_decl_assignmentContext, Net_declarationContext, List_of_port_identifiersContext, Inout_declarationContext, Input_declarationContext, Output_declarationContext, List_of_variable_port_identifiersContext, List_of_tf_variable_identifiersContext, Tf_port_declarationContext, Ansi_port_declarationContext, Specify_output_terminal_descriptorContext, Tf_port_itemContext } from "./grammar/build/SystemVerilogParser";
 import { Token } from "antlr4ts/Token";
 import { ParserRuleContext } from "antlr4ts";
 import { Range, Position } from "vscode-languageserver-types";
-import { Override } from "antlr4ts/Decorators";
 
 export class AbstractNode {
 
@@ -166,8 +165,6 @@ export class IdentifierNode extends AbstractNode {
         this.text = ctx.text;
     }
 
-    public isAbstract() { return false; }
-
     public getText() : string {
         return this.text;
     }
@@ -224,11 +221,12 @@ export class ModuleNode extends AbstractNode {
 export class PortNode extends AbstractNode {
 
     private portIdentifier: string;
+    private portType: string;
     
     constructor(ctx: Port_identifierContext | Net_decl_assignmentContext) {
         super(ctx);
-        this.portIdentifier = ctx instanceof Net_decl_assignmentContext ? ctx.net_identifier().text
-                                                                        : ctx.text;
+        this.portIdentifier = this.findIdentifier(ctx);
+        this.portType = this.findType(ctx);
     }
 
     public isAbstract() { return false; }
@@ -237,9 +235,49 @@ export class PortNode extends AbstractNode {
         return this.portIdentifier;
     }
 
+    public getType(): string {
+        return this.portType;
+    }
+
+    private findIdentifier(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
+        return ctx instanceof Net_decl_assignmentContext ? ctx.net_identifier().text
+                                                         : ctx.text;
+    }
+
+    private findType(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
+        if(ctx instanceof Net_decl_assignmentContext) {
+            let netdeclaration = ctx.parent.parent as Net_declarationContext;
+            if(netdeclaration.net_type_identifier())
+                return netdeclaration.net_type_identifier().text;
+            else
+                return netdeclaration.data_type_or_implicit().text;
+        } else {
+            let parent = ctx.parent;
+            if(parent instanceof List_of_port_identifiersContext){
+                let grandparent = parent.parent as Inout_declarationContext | Input_declarationContext | Output_declarationContext;
+                return grandparent.net_port_type().text;
+            } else if(parent instanceof List_of_variable_port_identifiersContext){
+                let grandparent = parent.parent as Output_declarationContext;
+                return grandparent.variable_port_type().text;
+            } else if(parent instanceof List_of_tf_variable_identifiersContext){
+                let grandparent = parent.parent as Tf_port_declarationContext;
+                return grandparent.data_type_or_implicit().text;
+            } else if(parent instanceof Ansi_port_declarationContext){
+                return parent.net_port_header() ? parent.net_port_header().net_port_type().text
+                : parent.interface_port_header() ? parent.interface_port_header().interface_identifier() 
+                                                     ? parent.interface_port_header().interface_identifier().text 
+                                                     : parent.variable_port_header().text : "";
+            } else if(parent instanceof Tf_port_itemContext){
+                return parent.data_type_or_implicit().text;
+            }
+            return "";
+        }
+    }
+
 }
 
 export class RootNode extends AbstractNode {
+
 
     private children : AbstractNode[];
 
