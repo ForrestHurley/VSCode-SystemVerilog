@@ -1,12 +1,19 @@
 import { AbstractNode } from "./ASTNode";
 import { Range } from "vscode-languageserver-types";
-import { ParseTreeMatch } from "antlr4ts/tree/pattern/ParseTreeMatch";
 
 export class ASTUtils {
 
     public static findNodeFromRange(range: Range, root : AbstractNode): AbstractNode {
-        if(this.isInRange(range, root))
-            throw new Error("Range does not exist in defined tree");
+        if(!this.isInRange(range, root))
+            return new AbstractNode();
+        root.getChildren().forEach((val: AbstractNode) => {
+            if(this.isInRange(range, val))
+                return this.nodeRange(range, val);
+        });
+        return root;
+    }
+
+    private static nodeRange(range: Range, root : AbstractNode): AbstractNode {
         root.getChildren().forEach((val: AbstractNode) => {
             if(this.isInRange(range, val))
                 return this.findNodeFromRange(range, val);
@@ -27,7 +34,7 @@ export class ASTUtils {
         } else if(endLineDif === 0) {
             var endPositionDif = rangeTarget.end.character - nodeRange.end.character;
             if(endPositionDif === 0)
-                return false;
+                return false;        
         } else {
             return true;
         }

@@ -1,6 +1,6 @@
 import { SystemVerilogVisitor } from "./grammar/build/SystemVerilogVisitor";
 import { AbstractParseTreeVisitor } from "antlr4ts/Tree/AbstractParseTreeVisitor";
-import { AbstractNode, ClassNode, FunctionNode, RootNode, IncludeNode, VariableNode, ConstraintNode, ModuleNode, PortNode } from "./ASTNode";
+import { AbstractNode, ClassNode, FunctionNode, RootNode, IncludeNode, VariableNode, ConstraintNode, ModuleNode, PortNode, IdentifierNode } from "./ASTNode";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { System_verilog_textContext, Source_textContext, DescriptionContext, Module_nonansi_headerContext, Module_ansi_headerContext, 
     Module_declarationContext, Module_keywordContext, Interface_declarationContext, Interface_nonansi_headerContext, Interface_ansi_headerContext, 
@@ -347,7 +347,6 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitVariable_decl_assignment(ctx: Variable_decl_assignmentContext): VariableNode {
         return new VariableNode(ctx);
     }
-    // Variable Declaration
     visitClass_new?: (ctx: Class_newContext) => AbstractNode;
     visitDynamic_array_new?: (ctx: Dynamic_array_newContext) => AbstractNode;
     visitUnpacked_dimension?: (ctx: Unpacked_dimensionContext) => AbstractNode;
@@ -357,9 +356,7 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitQueue_dimension?: (ctx: Queue_dimensionContext) => AbstractNode;
     visitUnsized_dimension?: (ctx: Unsized_dimensionContext) => AbstractNode;
     visitFunction_data_type_or_implicit?: (ctx: Function_data_type_or_implicitContext) => AbstractNode;
-    visitFunction_declaration(ctx: Function_declarationContext): AbstractNode {
-        return new AbstractNode();
-    }
+    visitFunction_declaration?: (ctx: Function_declarationContext) => AbstractNode;
     visitFunction_body_declaration(ctx: Function_body_declarationContext): AbstractNode {
         let tfitems: AbstractNode[] = new Array<AbstractNode>();
         ctx.tf_item_declaration().forEach((val) => {
@@ -863,7 +860,7 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitHierarchical_tf_identifier?: (ctx: Hierarchical_tf_identifierContext) => AbstractNode;
     visitHierarchical_variable_identifier?: (ctx: Hierarchical_variable_identifierContext) => AbstractNode;
     visitIdentifier(ctx: IdentifierContext): AbstractNode {
-        return new AbstractNode();
+        return new IdentifierNode(ctx);
     }
     visitIndex_variable_identifier?: (ctx: Index_variable_identifierContext) => AbstractNode;
     visitInterface_identifier?: (ctx: Interface_identifierContext) => AbstractNode;
