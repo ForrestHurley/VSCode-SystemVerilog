@@ -70,7 +70,7 @@ connection.onCompletion(
 		var completionList: CompletionItem[] = [];
 		var doc = documents.get(completionParams.textDocument.uri);
 		//Create Completion Provider
-		var completionProvider = new SVCompletionItemProvider();
+		var completionProvider = new SVCompletionItemProvider(backend);
 
 		//pass in document uri, cursor position, and completion context (trigger kind and character)
 		//list of completion items get returned

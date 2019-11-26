@@ -1,5 +1,5 @@
-
-import {CompletionItem, Position, TextDocument, CancellationToken, CompletionContext, CompletionItemKind, Command } from 'vscode-languageserver';
+import {ANTLRBackend} from '../compiling/ANTLRBackend';
+import {Range, CompletionItem, Position, TextDocument, CancellationToken, CompletionContext, CompletionItemKind, Command } from 'vscode-languageserver';
 
 // See test/SymbolKind_icons.png for an overview of the icons
 export function getCompletionItemKind(name: String): CompletionItemKind {
@@ -28,9 +28,10 @@ export function getCompletionItemKind(name: String): CompletionItemKind {
  */
 export class SVCompletionItemProvider {
     private globals: CompletionItem[] = [];     
+    private backend: ANTLRBackend;
 
-    constructor() {
-
+    constructor(backend: ANTLRBackend) {
+        this.backend = backend;
     };
 
     //Entrypoint for getting completion items
@@ -43,7 +44,7 @@ export class SVCompletionItemProvider {
             case '$':
                 completionItems = completionItems.concat(this.getDollarItems());
             case '.':
-                completionItems = completionItems.concat(this.getFieldItems(position));
+                completionItems = completionItems.concat(this.getFieldItems(document, position));
             case ' ':
                 //completion items for empty space trigger char
         }
@@ -70,7 +71,7 @@ export class SVCompletionItemProvider {
         return completionItems;
     }
 
-    private getFieldItems(position: Position): CompletionItem[] {
+    private getFieldItems(document: TextDocument, position: Position): CompletionItem[] {
         let completionItems : CompletionItem[] = [];
         let fieldItems: string[] = [];
         
@@ -78,6 +79,20 @@ export class SVCompletionItemProvider {
         //find token before "."
         //get field items using AST
         //
+        
+        let uri = document.uri.toString();
+        let ast = this.backend.abstract_trees[uri];
+        
+        let end = document.positionAt(document.offsetAt(position) - 1);
+        let start = document.positionAt(document.offsetAt(position) - 4);
+        let range = Range.create(start, end);
+        document.getText(range);
+        
+        // this.backend.abstract_trees[uri].children[*]
+        // ast.entries.forEach(entry => {
+        
+        // });
+        
         fieldItems.forEach(element => {
             //check field type - variable, method
             completionItems.push(this.constructCompletionItems(element, 'string'));
@@ -91,3 +106,4 @@ export class SVCompletionItemProvider {
         return item;
     }
 };
+
