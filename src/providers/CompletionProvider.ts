@@ -87,6 +87,7 @@ export class SVCompletionItemProvider {
         let ast = this.backend.abstract_trees[uri];
         
         let loc = document.positionAt(document.offsetAt(position)-2);
+        loc.line += 1;
         let range = Range.create(loc,loc);
 
         let node = ASTUtils.findNodeFromRange(range,ast);

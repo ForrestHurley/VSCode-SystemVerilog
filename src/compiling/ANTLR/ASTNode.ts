@@ -1,7 +1,8 @@
-import { Class_declarationContext, Function_body_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext, Constraint_declarationContext, Module_declarationContext, System_verilog_textContext, IdentifierContext, Port_identifierContext, Net_decl_assignmentContext, Net_declarationContext, List_of_port_identifiersContext, Inout_declarationContext, Input_declarationContext, Output_declarationContext, List_of_variable_port_identifiersContext, List_of_tf_variable_identifiersContext, Tf_port_declarationContext, Ansi_port_declarationContext, Specify_output_terminal_descriptorContext, Tf_port_itemContext } from "./grammar/build/SystemVerilogParser";
+import { Class_declarationContext, Function_body_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext, Constraint_declarationContext, Module_declarationContext, System_verilog_textContext, IdentifierContext, Port_identifierContext, Net_decl_assignmentContext, Net_declarationContext, List_of_port_identifiersContext, Inout_declarationContext, Input_declarationContext, Output_declarationContext, List_of_variable_port_identifiersContext, List_of_tf_variable_identifiersContext, Tf_port_declarationContext, Ansi_port_declarationContext, Specify_output_terminal_descriptorContext, Tf_port_itemContext, PrimaryContext, Class_constructor_declarationContext, ExpressionContext, StatementContext, Hierarchical_identifierContext, Implicit_class_handleContext, Blocking_assignmentContext } from "./grammar/build/SystemVerilogParser";
 import { Token } from "antlr4ts/Token";
 import { ParserRuleContext } from "antlr4ts";
 import { Range, Position } from "vscode-languageserver-types";
+import { State } from "vscode-languageclient";
 
 export class AbstractNode {
 
@@ -52,6 +53,25 @@ export class ConstraintNode extends AbstractNode {
         return this.constraintIdentifier;
     }
 
+    public isAbstract() { return false; }
+}
+
+export class AssignmentNode extends AbstractNode {
+
+    private text:string;
+    private children:AbstractNode[];
+
+    constructor(ctx: Blocking_assignmentContext, right_items:AbstractNode[]){
+        super(ctx);
+        this.text = ctx.text;
+        this.children = new Array<AbstractNode>();
+
+        /*if (ctx.class_new()){
+            let 
+        }*/
+
+    }
+    
     public isAbstract() { return false; }
 }
 
@@ -130,21 +150,49 @@ export class ClassNode extends AbstractNode {
         return this.constraints;
     }
 
+    public getChildren(): AbstractNode[] {
+        let children = new Array<AbstractNode>();
+
+        children = children
+            .concat(this.methods)
+            .concat(this.properties)
+            .concat(this.subclasses)
+            .concat(this.constraints);
+
+        return children;
+    }
+
     public isAbstract() { return false; }
 }
 
 export class FunctionNode extends AbstractNode {
     private function_identifier: string;
     private ports: PortNode[];
+    private statements: StatementNode[];
 
-    constructor(ctx: Function_body_declarationContext, tfItems: AbstractNode[]){
+    constructor(ctx: Function_body_declarationContext|Class_constructor_declarationContext, items: AbstractNode[]){
         super(ctx);
         this.ports = new Array<PortNode>();
-        tfItems.forEach((val) => {
+        this.statements = new Array<StatementNode>();
+        items.forEach((val) => {
             if(val instanceof PortNode)
                 this.ports.push(val);
+            if(val instanceof StatementNode)
+                this.statements.push(val);
         })
-        this.function_identifier = ctx.function_identifier(0).text;
+        if (ctx instanceof Function_body_declarationContext)
+            this.function_identifier = ctx.function_identifier(0).text;
+        else if (ctx instanceof Class_constructor_declarationContext)
+            this.function_identifier = "new";
+    }
+
+    public getChildren(): AbstractNode[] {
+        let children = new Array<AbstractNode>();
+        children = children
+            .concat(this.ports)
+            .concat(this.statements);
+
+        return children;
     }
 
     public getIdentifier(): string {
@@ -213,8 +261,37 @@ export class ModuleNode extends AbstractNode {
         })
     }
 
+    public getChildren(): AbstractNode[] {
+        let children = new Array<AbstractNode>();
+        return children
+            .concat(this.ports)
+            .concat(this.variables);
+    }
+
     public getIdentifier(): string {
         return this.module_identifier;
+    }
+
+    public isAbstract() { return false; }
+}
+
+export class StatementNode extends AbstractNode {
+    private text:string;
+    private children:AbstractNode[];
+
+    constructor(ctx: StatementContext, items: AbstractNode[]){
+        super(ctx);
+
+        this.text = ctx.text;
+        this.children = items;
+    }
+
+    public getChildren(): AbstractNode[]{
+        return this.children;
+    }
+
+    public getText(): string{
+        return this.text;
     }
 
     public isAbstract() { return false; }
@@ -224,11 +301,19 @@ export class PortNode extends AbstractNode {
 
     private portIdentifier: string;
     private portType: string;
+    private virtual: boolean;
     
     constructor(ctx: Port_identifierContext | Net_decl_assignmentContext) {
         super(ctx);
         this.portIdentifier = this.findIdentifier(ctx);
         this.portType = this.findType(ctx);
+
+        this.virtual = false;
+        if (this.portType.startsWith("virtual")){
+            this.virtual = true;
+            this.portType = this.portType.substring(7);
+        }
+
     }
 
     public isAbstract() { return false; }
@@ -239,6 +324,10 @@ export class PortNode extends AbstractNode {
 
     public getType(): string {
         return this.portType;
+    }
+
+    public getVirtual(): boolean {
+        return this.virtual;
     }
 
     private findIdentifier(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
@@ -296,6 +385,23 @@ export class RootNode extends AbstractNode {
 
     public isAbstract() { return false; }
 
+}
+
+export class HierarchicalIdentifierNode extends AbstractNode {
+
+    private text: string;
+
+    constructor(ctx: Hierarchical_identifierContext|Implicit_class_handleContext){
+        super(ctx);
+
+        this.text = ctx.text;
+    }
+
+    public appendToHierarchy(node: HierarchicalIdentifierNode){
+        this.text += node.text;
+    }
+
+    public isAbstract() { return false; }
 }
 
 export class VariableNode extends AbstractNode {

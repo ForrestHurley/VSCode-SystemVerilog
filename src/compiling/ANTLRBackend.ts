@@ -12,10 +12,11 @@ import {SyntaxErrorListener} from './ANTLR/SyntaxErrorListener'
 import { isSystemVerilogDocument, isVerilogDocument, getLineRange } from '../utils/server';
 import { DiagnosticData, isDiagnosticDataUndefined } from "./DiagnosticData";
 import { ASTBuilder } from "./ANTLR/ASTBuilder";
-import { RootNode, IncludeNode } from "./ANTLR/ASTNode";
+import { RootNode, IncludeNode, StatementNode } from "./ANTLR/ASTNode";
 import * as path from 'path';
 import { IncludeTree, IncludeFile } from "./IncludeTree";
 import { resolve } from "dns";
+import { State } from "vscode-languageclient";
 
 export class ANTLRBackend{
     built_parse_trees = new Map<string, System_verilog_textContext>();
@@ -78,8 +79,10 @@ export class ANTLRBackend{
             
             let builder = new ASTBuilder();
             let ast = builder.visit(tree) as RootNode;
-            ast.uri = document.uri;
-            await this.loadIncludes(ast);
+            if (ast) {
+                ast.uri = document.uri;
+                await this.loadIncludes(ast);
+            }
 
             this.built_parse_trees[document.uri] = tree;
             this.abstract_trees[document.uri] = ast;
