@@ -27,18 +27,18 @@ export class ASTUtils {
         let nodeRange = node.getRange();
         let startLineDif = nodeRange.start.line - rangeTarget.start.line;
         let endLineDif = rangeTarget.end.line - nodeRange.end.line;
-        if(startLineDif < 0 || endLineDif < 0)
-            return true;
+        if(startLineDif > 0 || endLineDif > 0)
+            return false;
         else if(startLineDif == 0){
             let startPositionDif = nodeRange.start.character - rangeTarget.start.character;
-            if(startPositionDif <= 0)
-                return true;
-        } else if(endLineDif === 0) {
+            if(startPositionDif > 0)
+                return false;
+        } else if(endLineDif == 0) {
             let endPositionDif = rangeTarget.end.character - nodeRange.end.character;
-            if(endPositionDif <= 0)
-                return true;        
+            if(endPositionDif > 0)
+                return false;        
         }
-        return false;
+        return true;
     }
 
 }
