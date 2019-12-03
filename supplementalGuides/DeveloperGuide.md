@@ -18,7 +18,7 @@ Run the following command to install all the dependencies and generate parser.
     
 List of all the dependencies can be found in `/package.json` file    
 
-
+![dependencies](dependencies.png)
 
 ## Rename a file
 

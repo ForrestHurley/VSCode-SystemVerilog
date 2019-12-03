@@ -10,7 +10,8 @@ Getting released version from VS Code Marketplace.
 - Click on result: **SystemVerilog - Language Support**
 - Click `Install` button
 
-//add picture
+	![marketplace](marketplace.png)
+
 ### From VSIX file
 Have copy of `.vsix` file for the extension? 
 - Open VSCode
@@ -19,10 +20,9 @@ Have copy of `.vsix` file for the extension?
 - Browse to VSIX file, click the file
 - Click `install`
 
-//add picture
--  Reload the window by running  `Developer: Reload window`  command.
+	![vsix](vsix.png)
 
-New work item
+-  Reload the window by running  `Developer: Reload window`  command.
 
 ## Features
 ### Syntax Error Identification
@@ -32,7 +32,8 @@ New work item
 ## Settings
 Change the settings listed below to customize the extension experience.
 
-//add screenshot of settings page 
+![settings](settings.png)
+
 -  `systemverilog.antlrVerification`: _Boolean_, Use ANTLR parser to verify code in real-time
 -  `systemverilog.disableIndexing`: _Boolean_, Disable indexing
 -  `systemverilog.excludeIndexing`: _String_, Exclude files from indexing based on glob
