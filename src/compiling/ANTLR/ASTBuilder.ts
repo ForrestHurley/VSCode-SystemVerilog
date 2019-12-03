@@ -1,5 +1,5 @@
 import { SystemVerilogVisitor } from "./grammar/build/SystemVerilogVisitor";
-import { AbstractParseTreeVisitor } from "antlr4ts/Tree/AbstractParseTreeVisitor";
+import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
 import { AbstractNode, ClassNode, FunctionNode, RootNode, IncludeNode, VariableNode, ConstraintNode, ModuleNode, PortNode, IdentifierNode } from "./ASTNode";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { System_verilog_textContext, Source_textContext, DescriptionContext, Module_nonansi_headerContext, Module_ansi_headerContext, 

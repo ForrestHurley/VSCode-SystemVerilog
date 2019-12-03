@@ -7,27 +7,32 @@ import {
 } from "vscode-languageserver";
 import { ANTLRInputStream, CommonTokenStream, ConsoleErrorListener} from 'antlr4ts';
 import {SystemVerilogLexer} from './ANTLR/grammar/build/SystemVerilogLexer'
-import {SystemVerilogParser, System_verilog_textContext} from './ANTLR/grammar/build/SystemVerilogParser'
+import {SystemVerilogParser, System_verilog_textContext, Specify_output_terminal_descriptorContext} from './ANTLR/grammar/build/SystemVerilogParser'
 import {SyntaxErrorListener} from './ANTLR/SyntaxErrorListener'
 import { isSystemVerilogDocument, isVerilogDocument, getLineRange } from '../utils/server';
 import { DiagnosticData, isDiagnosticDataUndefined } from "./DiagnosticData";
 import { ASTBuilder } from "./ANTLR/ASTBuilder";
 import { RootNode, IncludeNode } from "./ANTLR/ASTNode";
 import * as path from 'path';
+import { IncludeTree, IncludeFile } from "./IncludeTree";
+import { resolve } from "dns";
 
 export class ANTLRBackend{
     built_parse_trees = new Map<string, System_verilog_textContext>();
     abstract_trees = new Map<string, RootNode>();
     building_errors = new Map<string, SyntaxErrorListener>();
     currently_parsing = new Map<string, boolean>();
+    include_tree = new IncludeTree();
     original_text = "";
     parsed_text = "";
     translation_info: [number, number, number][] = [];
 
     openFunction:Function;
+    verifyFunction:Function;
 
-    constructor(openFunction?:Function){
+    constructor(openFunction?:Function,verifyFunction?:Function){
         this.openFunction = openFunction;
+        this.verifyFunction = verifyFunction;
     }
 
     /**
@@ -80,6 +85,11 @@ export class ANTLRBackend{
             this.abstract_trees[document.uri] = ast;
             this.building_errors[document.uri] = syntaxError;
             this.currently_parsing[document.uri] = false;
+
+            this.include_tree[document.uri].including_files.forEach((val:string) => {
+                this.verifyFunction(val,false);
+            });
+
             resolve();
         });
     }
@@ -88,9 +98,11 @@ export class ANTLRBackend{
         if (!ast.uri)
             return;
 
-        ast.getChildren().forEach(async (val) => {
+        let include_set:Set<string> = new Set<string>();
+        ast.getChildren().forEach((val) => {
             if (val instanceof IncludeNode){
                 let include_dir = path.dirname(ast.uri) + "/" + val.getFileName();
+                include_set.add(include_dir);
                 if (this.openFunction) {
                     if (!this.built_parse_trees[include_dir] &&
                         !this.currently_parsing[include_dir])
@@ -98,6 +110,39 @@ export class ANTLRBackend{
                 }
             }
         });
+
+        this.include_tree.AddOrModifyFile(ast.uri,include_set);
+
+        return new Promise((resolve) => resolve());
+    }
+
+    public fileIncludesUnloaded(uri:string):string {
+        if (!this.include_tree[uri])
+            return "";
+        let out = this.include_tree.GetAllIncludes(uri).filter((val)=>{
+            return !this.built_parse_trees[val]
+        })
+        return out.join(" ");
+    }
+
+    public findFirstInclude(uri:string):Range {
+        if (!this.abstract_trees[uri])
+            return getLineRange(0,"",0);
+
+        let minimum_line = 1000;
+        let out_range = getLineRange(0,"",0);
+        this.abstract_trees[uri].getChildren().forEach(async (val) => {
+            if (val instanceof IncludeNode){
+                if(val.getRange().start.line < minimum_line) {
+                    minimum_line = val.getRange().start.line;
+                    out_range = val.getRange();
+                    out_range.start.line -= 1;
+                    out_range.end.line -= 1;
+                }
+            }
+        });
+
+        return out_range;
     }
 
     /**
@@ -140,13 +185,27 @@ export class ANTLRBackend{
                 let diagnostic = {
                     severity: DiagnosticSeverity.Error,
                     range: range,
-                    message: this.getImprovedMessage(syntaxError.error_list[i],document.uri,syntaxError.error_list.length),
+                    message: this.getImprovedMessage(syntaxError.error_list[i],document.uri,i+1),
                     source: 'systemverilog'
                 };
 
                 if (diagnostic.message != "") //If message is blank, ignore it
                     diagnosticList.push(diagnostic);
             }
+
+            let unloaded_include = this.fileIncludesUnloaded(document.uri);
+            if (unloaded_include != ""){
+                let range: Range = this.findFirstInclude(document.uri);
+                let diagnostic = {
+                    severity: DiagnosticSeverity.Warning,
+                    range: range,
+                    message: "Include file not currently loaded by extension. This may lead to incorrect errors: " + unloaded_include,
+                    source: 'systemverilog'
+                };
+
+                diagnosticList.push(diagnostic);
+            }
+
             diagnosticCollection.set(document.uri,diagnosticList);
 
             resolve(diagnosticCollection);
@@ -244,7 +303,7 @@ export class ANTLRBackend{
                 // Add removal of ifdef to translation_info
                 this.translation_info.push([def_start_location - 1, def_end_location + '`endif'.length - def_start_location, -1]);
                 // Remove ifdef block
-                let next_def: number = new_text.indexOf('`ifdef', def_end_location + '`endif'.length)
+                let next_def: number = new_text.indexOf('`ifndef', def_end_location + '`endif'.length)
                 if (next_def == -1) {
                     newer_text = newer_text.concat(new_text.slice(def_end_location + '`endif'.length));
                     break;
@@ -252,7 +311,7 @@ export class ANTLRBackend{
                     newer_text = newer_text.concat(new_text.slice(def_end_location + '`endif'.length, next_def));
                 }
             }
-            def_start_location = new_text.indexOf('`ifdef', def_end_location + '`endif'.length);
+            def_start_location = new_text.indexOf('`ifndef', def_end_location + '`endif'.length);
         }
         return newer_text;
     }
@@ -315,6 +374,10 @@ export class ANTLRBackend{
                     new_text = new_text.slice(0, macro_index) + define[1] + new_text.slice(macro_index + 1 + define[0].length);
                     break;
                 }
+            }
+            // Break if last '`' was the first character 
+            if (macro_index == 0) {
+                break;
             }
             // Get next macro index
             macro_index = new_text.lastIndexOf('`', macro_index - 1);

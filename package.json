@@ -174,7 +174,7 @@
         "watch": "tsc -watch -p ./",
         "test": "npm run compile && node ./out/test/runTest.js",
         "coverage": "nyc npm test",
-        "antlr4ts_compile": "antlr4ts -visitor ./src/compiling/ANTLR/grammar/SystemVerilog.g4 -o ./src/compiling/ANTLR/grammar/build"
+        "antlr4ts_compile": "cd ./src/compiling/ANTLR/grammar && antlr4ts -visitor SystemVerilog.g4 -o ./build"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",

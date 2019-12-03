@@ -26,7 +26,7 @@ export class AbstractNode {
     }
 
     public getChildren(): AbstractNode[] {
-        return new AbstractNode[0]();
+        return new Array<AbstractNode>();
     }
 
     public getRange(): Range {
@@ -206,7 +206,9 @@ export class IncludeNode extends AbstractNode {
 
     constructor(ctx: Include_compiler_directiveContext){
         super(ctx);
-        this.file_name = ctx.FILENAME().text.replace(/['"]+/g, '');
+        this.file_name = "None";
+        if (!ctx.exception && ctx.FILENAME())
+            this.file_name = ctx.FILENAME().text.replace(/['"]+/g, '');
     }
 
     getFileName(){ return this.file_name; }
