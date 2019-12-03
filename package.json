@@ -173,7 +173,7 @@
         "compile": "npm run antlr4ts_compile && tsc -p ./",
         "watch": "tsc -watch -p ./",
         "test": "npm run compile && node ./out/test/runTest.js",
-        "coverage": "node ./out/test/runTest.js --coverage",
+        "coverage": "npm run compile && node ./out/test/runTest.js --coverage",
         "antlr4ts_compile": "cd ./src/compiling/ANTLR/grammar && antlr4ts -visitor SystemVerilog.g4 -o ./build"
     },
     "devDependencies": {
