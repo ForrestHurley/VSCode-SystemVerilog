@@ -3,6 +3,13 @@ import { Range } from "vscode-languageserver-types";
 
 export class ASTUtils {
 
+    public static initializeParents(node: AbstractNode) {
+        node.getChildren().forEach((val) => {
+            val.setParent(node);
+            ASTUtils.initializeParents(val);
+        });
+    }
+
     public static findNodeFromRange(range: Range, root : AbstractNode): AbstractNode {
         if(!this.doesContainRange(range, root))
             return new AbstractNode();

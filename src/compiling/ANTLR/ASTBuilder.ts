@@ -1,6 +1,6 @@
 import { SystemVerilogVisitor } from "./grammar/build/SystemVerilogVisitor";
 import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
-import { AbstractNode, ClassNode, FunctionNode, RootNode, IncludeNode, VariableNode, ConstraintNode, ModuleNode, PortNode, IdentifierNode, StatementNode, HierarchicalIdentifierNode, AssignmentNode } from "./ASTNode";
+import { AbstractNode, ClassNode, FunctionNode, RootNode, IncludeNode, VariableNode, ConstraintNode, ModuleNode, PortNode, IdentifierNode, StatementNode, AssignmentNode } from "./ASTNode";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
 import { System_verilog_textContext, Source_textContext, DescriptionContext, Module_nonansi_headerContext, Module_ansi_headerContext, 
     Module_declarationContext, Module_keywordContext, Interface_declarationContext, Interface_nonansi_headerContext, Interface_ansi_headerContext, 
@@ -802,7 +802,7 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitTime_literal?: (ctx: Time_literalContext) => AbstractNode;
     visitTime_unit?: (ctx: Time_unitContext) => AbstractNode;
     visitImplicit_class_handle(ctx: Implicit_class_handleContext){
-        return new HierarchicalIdentifierNode(ctx);
+        return new VariableNode(ctx);
     }
     visitBit_select?: (ctx: Bit_selectContext) => AbstractNode;
     visitSelect?: (ctx: SelectContext) => AbstractNode;
@@ -812,7 +812,7 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitConstant_let_expression?: (ctx: Constant_let_expressionContext) => AbstractNode;
     visitNet_lvalue?: (ctx: Net_lvalueContext) => AbstractNode;
     visitVariable_lvalue(ctx: Variable_lvalueContext){
-        return new HierarchicalIdentifierNode(ctx);
+        return new VariableNode(ctx);
     }
     visitNonrange_variable_lvalue?: (ctx: Nonrange_variable_lvalueContext) => AbstractNode;
     visitUnary_operator?: (ctx: Unary_operatorContext) => AbstractNode;
@@ -879,7 +879,7 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitHierarchical_block_identifier?: (ctx: Hierarchical_block_identifierContext) => AbstractNode;
     visitHierarchical_event_identifier?: (ctx: Hierarchical_event_identifierContext) => AbstractNode;
     visitHierarchical_identifier(ctx: Hierarchical_identifierContext){
-        return new HierarchicalIdentifierNode(ctx);
+        return new VariableNode(ctx);
     }
     visitHierarchical_net_identifier?: (ctx: Hierarchical_net_identifierContext) => AbstractNode;
     visitHierarchical_parameter_identifier?: (ctx: Hierarchical_parameter_identifierContext) => AbstractNode;

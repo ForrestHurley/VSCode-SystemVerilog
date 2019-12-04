@@ -3,11 +3,13 @@ import { Token } from "antlr4ts/Token";
 import { ParserRuleContext } from "antlr4ts";
 import { Range, Position } from "vscode-languageserver-types";
 import { State } from "vscode-languageclient";
+import { PassThrough } from "stream";
 
 export class AbstractNode {
 
-    private start;
-    private stop;
+    protected start: Token;
+    protected stop: Token;
+    private parent?: AbstractNode;
 
     constructor(ctx?: ParserRuleContext) {
         if(ctx) {
@@ -28,6 +30,14 @@ export class AbstractNode {
 
     public getChildren(): AbstractNode[] {
         return new Array<AbstractNode>();
+    }
+
+    public setParent(parent: AbstractNode): void {
+        this.parent = parent;
+    }
+
+    public getParent(): AbstractNode {
+        return this.parent;
     }
 
     public getRange(): Range {
@@ -66,10 +76,31 @@ export class AssignmentNode extends AbstractNode {
         this.text = ctx.text;
         this.children = new Array<AbstractNode>();
 
-        /*if (ctx.class_new()){
-            let 
-        }*/
+        if (ctx.class_new()){
+            let node_list = new Array<AbstractVariableNode>();
+            if (ctx.implicit_class_handle())
+                node_list.push(new VariableNode(ctx.implicit_class_handle()));
+            if (ctx.class_scope())
+                true;
 
+            if(ctx.package_scope())
+                true;
+
+            node_list.push(new VariableNode(ctx.hierarchical_variable_identifier().hierarchical_identifier()));
+
+            let new_node = node_list[0];
+            node_list.slice(1).forEach((val)=>{
+                new_node.appendToHierarchy(val);
+            });
+
+            this.children.push(new_node);
+        }
+
+        this.children = this.children.concat(right_items);
+    }
+
+    public getChildren(): AbstractNode[] {
+        return this.children;
     }
     
     public isAbstract() { return false; }
@@ -83,7 +114,7 @@ export class ClassNode extends AbstractNode {
     private virtual: boolean;
 
     private methods: FunctionNode[];
-    private properties: VariableNode[];
+    private properties: AbstractVariableNode[];
     private subclasses: ClassNode[];
     private constraints: ConstraintNode[];
 
@@ -93,7 +124,7 @@ export class ClassNode extends AbstractNode {
         this.interfaces = ctx.interface_class_type().map((val) => { return val.text; });
         
         this.methods = new Array<FunctionNode>();
-        this.properties = new Array<VariableNode>();
+        this.properties = new Array<AbstractVariableNode>();
         this.subclasses = new Array<ClassNode>();
         this.constraints = new Array<ConstraintNode>();
 
@@ -108,11 +139,11 @@ export class ClassNode extends AbstractNode {
         items.forEach((val) => {
             if (val instanceof FunctionNode)
                 this.methods.push(val);
-            if (val instanceof VariableNode)
+            else if (val instanceof AbstractVariableNode)
                 this.properties.push(val);
-            if (val instanceof ClassNode)
+            else if (val instanceof ClassNode)
                 this.subclasses.push(val);
-            if (val instanceof ConstraintNode)
+            else if (val instanceof ConstraintNode)
                 this.constraints.push(val);
         });
 
@@ -138,7 +169,7 @@ export class ClassNode extends AbstractNode {
         return this.methods;
     }
 
-    public getProperties(): VariableNode[] {
+    public getProperties(): AbstractVariableNode[] {
         return this.properties;
     }
 
@@ -238,26 +269,32 @@ export class IncludeNode extends AbstractNode {
 export class ModuleNode extends AbstractNode {
     private module_identifier: string;
     private ports: PortNode[];
-    private variables: VariableNode[];
+    private variables: AbstractVariableNode[];
+    private statements: StatementNode[];
     
     constructor(ctx: Module_declarationContext, items: AbstractNode[], nonPorts: AbstractNode[]) {
         super(ctx);
         this.ports = new Array<PortNode>();
-        this.variables = new Array<VariableNode>();
+        this.variables = new Array<AbstractVariableNode>();
+        this.statements = new Array<StatementNode>();
         this.module_identifier = ctx.module_ansi_header() ? ctx.module_ansi_header().module_identifier().text
                                                           : ctx.module_nonansi_header() ? ctx.module_nonansi_header().module_identifier().text
                                                                                         : "";
         items.forEach((val) => {
             if(val instanceof PortNode)
                 this.ports.push(val);
-            if(val instanceof VariableNode)
+            else if(val instanceof AbstractVariableNode)
                 this.variables.push(val);
+            else if(val instanceof StatementNode)
+                this.statements.push(val);
         });
         nonPorts.forEach((val) => {
             if(val instanceof PortNode)
                 this.ports.push(val);
-            if(val instanceof VariableNode)
+            else if(val instanceof AbstractVariableNode)
                 this.variables.push(val);
+            else if(val instanceof StatementNode)
+                this.statements.push(val);
         })
     }
 
@@ -265,7 +302,8 @@ export class ModuleNode extends AbstractNode {
         let children = new Array<AbstractNode>();
         return children
             .concat(this.ports)
-            .concat(this.variables);
+            .concat(this.variables)
+            .concat(this.statements);
     }
 
     public getIdentifier(): string {
@@ -297,45 +335,103 @@ export class StatementNode extends AbstractNode {
     public isAbstract() { return false; }
 }
 
-export class PortNode extends AbstractNode {
-
-    private portIdentifier: string;
-    private portType: string;
-    private virtual: boolean;
+export class AbstractVariableNode extends AbstractNode {
     
-    constructor(ctx: Port_identifierContext | Net_decl_assignmentContext) {
+    private variable_identifier: string;
+    private port_type: string;
+    private virtual: boolean;
+
+    private sub_variable?: AbstractVariableNode;
+
+    constructor(ctx: ParserRuleContext, 
+            variable_identifier: string, 
+            port_type: string = "", 
+            sub_variable?: AbstractVariableNode, 
+            virtual: boolean = false){
         super(ctx);
-        this.portIdentifier = this.findIdentifier(ctx);
-        this.portType = this.findType(ctx);
 
-        this.virtual = false;
-        if (this.portType.startsWith("virtual")){
-            this.virtual = true;
-            this.portType = this.portType.substring(7);
-        }
-
+        this.variable_identifier = variable_identifier;
+        this.port_type = port_type;
+        this.sub_variable = sub_variable;
+        this.virtual = virtual;
     }
 
-    public isAbstract() { return false; }
+    public appendToHierarchy(node: AbstractVariableNode){
+        if (this.sub_variable)
+            this.sub_variable.appendToHierarchy(node);
+        else
+            this.sub_variable = node;
+        if (this.stop.stopIndex < node.getStopToken().stopIndex)
+            this.stop = node.getStopToken();
+    }
 
     public getIdentifier(): string {
-        return this.portIdentifier;
+        return this.variable_identifier;
     }
 
     public getType(): string {
-        return this.portType;
+        return this.port_type;
     }
 
     public getVirtual(): boolean {
         return this.virtual;
     }
 
-    private findIdentifier(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
+    public getChildren(): AbstractNode[] {
+        if (this.sub_variable)
+            return [this.sub_variable];
+        return new Array<AbstractNode>();
+    }
+
+    public isAbstract() { return false; }
+    
+}
+
+export class VariableDeclarationNode extends AbstractVariableNode {
+    constructor(ctx: Variable_decl_assignmentContext){
+        let variable_identifier = "";
+        if(ctx.variable_identifier()){
+            variable_identifier = ctx.variable_identifier().text;
+        }
+        super(ctx,variable_identifier);
+    }
+}
+
+export class VariableNode extends AbstractVariableNode {
+    constructor(ctx: Hierarchical_identifierContext|Implicit_class_handleContext){
+        if (ctx instanceof Hierarchical_identifierContext) {
+            super(ctx,ctx.identifier()[0].text);
+            ctx.identifier().slice(1).forEach((val) => {
+                let new_node = new VariableNode(val);
+                this.appendToHierarchy(new_node);
+            });
+        }
+        else
+            super(ctx,ctx.text);
+    }
+}
+
+export class PortNode extends AbstractVariableNode {
+    
+    constructor(ctx: Port_identifierContext | Net_decl_assignmentContext) {
+        let port_identifier = PortNode.findIdentifier(ctx);
+        let port_type = PortNode.findType(ctx);
+
+        let virtual = false;
+        if (port_type.startsWith("virtual")){
+            virtual = true;
+            port_type = port_type.substring(7);
+        }
+
+        super(ctx,port_identifier,port_type,undefined,virtual);
+    }
+
+    private static findIdentifier(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
         return ctx instanceof Net_decl_assignmentContext ? ctx.net_identifier().text
                                                          : ctx.text;
     }
 
-    private findType(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
+    private static findType(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
         if(ctx instanceof Net_decl_assignmentContext) {
             let netdeclaration = ctx.parent.parent as Net_declarationContext;
             if(netdeclaration.net_type_identifier())
@@ -387,38 +483,3 @@ export class RootNode extends AbstractNode {
 
 }
 
-export class HierarchicalIdentifierNode extends AbstractNode {
-
-    private text: string;
-
-    constructor(ctx: Hierarchical_identifierContext|Implicit_class_handleContext){
-        super(ctx);
-
-        this.text = ctx.text;
-    }
-
-    public appendToHierarchy(node: HierarchicalIdentifierNode){
-        this.text += node.text;
-    }
-
-    public isAbstract() { return false; }
-}
-
-export class VariableNode extends AbstractNode {
-    
-    private variable_identifier: string;
-
-    constructor(ctx: Variable_decl_assignmentContext){
-        super(ctx);
-        if(ctx.variable_identifier()){
-            this.variable_identifier = ctx.variable_identifier().text;
-        }
-    }
-
-    public getIdentifier(): string {
-        return this.variable_identifier;
-    }
-
-    public isAbstract() { return false; }
-    
-}
