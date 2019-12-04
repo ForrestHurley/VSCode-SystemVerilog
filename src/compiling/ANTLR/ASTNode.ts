@@ -1,4 +1,4 @@
-import { Class_declarationContext, Function_body_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext, Constraint_declarationContext, Module_declarationContext, System_verilog_textContext, IdentifierContext, Port_identifierContext, Net_decl_assignmentContext, Net_declarationContext, List_of_port_identifiersContext, Inout_declarationContext, Input_declarationContext, Output_declarationContext, List_of_variable_port_identifiersContext, List_of_tf_variable_identifiersContext, Tf_port_declarationContext, Ansi_port_declarationContext, Specify_output_terminal_descriptorContext, Tf_port_itemContext, PrimaryContext, Class_constructor_declarationContext, ExpressionContext, StatementContext, Hierarchical_identifierContext, Implicit_class_handleContext, Blocking_assignmentContext, Data_declarationContext, Assertion_variable_declarationContext, Struct_union_memberContext } from "./grammar/build/SystemVerilogParser";
+import { Class_declarationContext, Function_body_declarationContext, Include_compiler_directiveContext, Variable_decl_assignmentContext, Constraint_declarationContext, Module_declarationContext, System_verilog_textContext, IdentifierContext, Port_identifierContext, Net_decl_assignmentContext, Net_declarationContext, List_of_port_identifiersContext, Inout_declarationContext, Input_declarationContext, Output_declarationContext, List_of_variable_port_identifiersContext, List_of_tf_variable_identifiersContext, Tf_port_declarationContext, Ansi_port_declarationContext, Specify_output_terminal_descriptorContext, Tf_port_itemContext, PrimaryContext, Class_constructor_declarationContext, ExpressionContext, StatementContext, Hierarchical_identifierContext, Implicit_class_handleContext, Blocking_assignmentContext, Data_declarationContext, Assertion_variable_declarationContext, Struct_union_memberContext, Data_type_or_implicitContext, Packed_dimensionContext, Data_typeContext } from "./grammar/build/SystemVerilogParser";
 import { Token } from "antlr4ts/Token";
 import { ParserRuleContext } from "antlr4ts";
 import { Range, Position } from "vscode-languageserver-types";
@@ -426,10 +426,12 @@ export class VariableNode extends AbstractNode {
     
     private variable_identifier: string;
     private variable_type: string;
-    private variable_dimension: string;
+    private variable_dimension: [number, number][];
+
 
     constructor(ctx: Variable_decl_assignmentContext){
         super(ctx);
+        this.variable_dimension = new Array<[number, number]>();
         this.variable_identifier = this.findIdentifier(ctx);
         this.variable_type = this.findType(ctx);
     }
@@ -461,20 +463,26 @@ export class VariableNode extends AbstractNode {
         else if(grandparent instanceof Struct_union_memberContext)
             return grandparent.data_type_or_void().text;
         else if(grandparent instanceof Data_declarationContext)
-            return grandparent.data_type_or_implicit().text
-            //return this.findRange(grandparent);
+            return this.findRange(grandparent.data_type_or_implicit());
         return "";
     }
 
-    private findRange(ctx: Data_declarationContext): string {
-        if(ctx.data_type_or_implicit().data_type() && ctx.data_type_or_implicit().data_type().packed_dimension()) {
-            this.variable_dimension = ctx.data_type_or_implicit().data_type().packed_dimension(0).text;
-            return ctx.data_type_or_implicit().data_type().integer_vector_type() ?
-                        ctx.data_type_or_implicit().data_type().integer_vector_type().text :
-                        ctx.data_type_or_implicit().data_type().type_identifier().text;
+    private findRange(ctx: Data_type_or_implicitContext): string {
+        if(ctx.data_type()) {
+            for(let x = 0; x < ctx.data_type().packed_dimension().length; x++)
+                this.addDimension(ctx.data_type(), x);
+            if(ctx.data_type().integer_vector_type())
+                return ctx.data_type().integer_vector_type().text;
+            else if(ctx.data_type().type_identifier())
+                return ctx.data_type().type_identifier().text
         }
-        else
-            return ctx.data_type_or_implicit().text;
+        return ctx.text;
+    }
+
+    private addDimension(ctx: Data_typeContext, index: number){
+        let dim1 = parseInt(ctx.packed_dimension(index).constant_range().constant_expression(0).text);
+        let dim2 = parseInt(ctx.packed_dimension(index).constant_range().constant_expression(1).text);
+        this.variable_dimension.push([dim1, dim2]);
     }
     
 }
