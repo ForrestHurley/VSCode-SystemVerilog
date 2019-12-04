@@ -1,9 +1,21 @@
-import { AbstractNode } from "./ASTNode";
+import { AbstractNode, ClassNode } from "./ASTNode";
 import { Range } from "vscode-languageserver-types";
 
 export class ASTUtils {
 
-    public static initializeParents(node: AbstractNode) {
+    public static findDefinition(node: AbstractNode): AbstractNode {
+        return new AbstractNode();
+    }
+
+    public static findThis(node: AbstractNode): AbstractNode {
+        if (node instanceof ClassNode)
+            return node;
+        if (!node.getParent())
+            return node;
+        return this.findThis(node.getParent());
+    }
+
+    public static initializeParents(node: AbstractNode): void {
         node.getChildren().forEach((val) => {
             val.setParent(node);
             ASTUtils.initializeParents(val);
