@@ -3,11 +3,13 @@ import { Token } from "antlr4ts/Token";
 import { ParserRuleContext } from "antlr4ts";
 import { Range, Position } from "vscode-languageserver-types";
 import { State } from "vscode-languageclient";
+import { PassThrough } from "stream";
 
 export class AbstractNode {
 
-    private start;
-    private stop;
+    protected start: Token;
+    protected stop: Token;
+    private parent?: AbstractNode;
 
     constructor(ctx?: ParserRuleContext) {
         if(ctx) {
@@ -28,6 +30,14 @@ export class AbstractNode {
 
     public getChildren(): AbstractNode[] {
         return new Array<AbstractNode>();
+    }
+
+    public setParent(parent: AbstractNode): void {
+        this.parent = parent;
+    }
+
+    public getParent(): AbstractNode {
+        return this.parent;
     }
 
     public getRange(): Range {
@@ -72,10 +82,31 @@ export class AssignmentNode extends AbstractNode {
         this.text = ctx.text;
         this.children = new Array<AbstractNode>();
 
-        /*if (ctx.class_new()){
-            let 
-        }*/
+        if (ctx.class_new()){
+            let node_list = new Array<AbstractVariableNode>();
+            if (ctx.implicit_class_handle())
+                node_list.push(new VariableNode(ctx.implicit_class_handle()));
+            if (ctx.class_scope())
+                true;
 
+            if(ctx.package_scope())
+                true;
+
+            node_list.push(new VariableNode(ctx.hierarchical_variable_identifier().hierarchical_identifier()));
+
+            let new_node = node_list[0];
+            node_list.slice(1).forEach((val)=>{
+                new_node.appendToHierarchy(val);
+            });
+
+            this.children.push(new_node);
+        }
+
+        this.children = this.children.concat(right_items);
+    }
+
+    public getChildren(): AbstractNode[] {
+        return this.children;
     }
     
     public isAbstract() { return false; }
@@ -89,7 +120,7 @@ export class ClassNode extends AbstractNode {
     private virtual: boolean;
 
     private methods: FunctionNode[];
-    private properties: VariableNode[];
+    private properties: AbstractVariableNode[];
     private subclasses: ClassNode[];
     private constraints: ConstraintNode[];
 
@@ -99,7 +130,7 @@ export class ClassNode extends AbstractNode {
         this.interfaces = ctx.interface_class_type().map((val) => { return val.text; });
         
         this.methods = new Array<FunctionNode>();
-        this.properties = new Array<VariableNode>();
+        this.properties = new Array<AbstractVariableNode>();
         this.subclasses = new Array<ClassNode>();
         this.constraints = new Array<ConstraintNode>();
 
@@ -112,18 +143,14 @@ export class ClassNode extends AbstractNode {
             this.virtual = true;
 
         items.forEach((val) => {
-            if (val instanceof FunctionNode){
+            if (val instanceof FunctionNode)
                 this.methods.push(val);
-            }
-            if (val instanceof VariableNode){
+            else if (val instanceof AbstractVariableNode)
                 this.properties.push(val);
-            }
-            if (val instanceof ClassNode){
+            else if (val instanceof ClassNode)
                 this.subclasses.push(val);
-            }
-            if (val instanceof ConstraintNode){
+            else if (val instanceof ConstraintNode)
                 this.constraints.push(val);
-            }
         });
 
     }
@@ -148,7 +175,7 @@ export class ClassNode extends AbstractNode {
         return this.methods;
     }
 
-    public getProperties(): VariableNode[] {
+    public getProperties(): AbstractVariableNode[] {
         return this.properties;
     }
 
@@ -252,26 +279,32 @@ export class IncludeNode extends AbstractNode {
 export class ModuleNode extends AbstractNode {
     private module_identifier: string;
     private ports: PortNode[];
-    private variables: VariableNode[];
+    private variables: AbstractVariableNode[];
+    private statements: StatementNode[];
     
     constructor(ctx: Module_declarationContext, items: AbstractNode[], nonPorts: AbstractNode[]) {
         super(ctx);
         this.ports = new Array<PortNode>();
-        this.variables = new Array<VariableNode>();
+        this.variables = new Array<AbstractVariableNode>();
+        this.statements = new Array<StatementNode>();
         this.module_identifier = ctx.module_ansi_header() ? ctx.module_ansi_header().module_identifier().text
                                                           : ctx.module_nonansi_header() ? ctx.module_nonansi_header().module_identifier().text
                                                                                         : "";
         items.forEach((val) => {
             if(val instanceof PortNode)
                 this.ports.push(val);
-            if(val instanceof VariableNode)
+            else if(val instanceof AbstractVariableNode)
                 this.variables.push(val);
+            else if(val instanceof StatementNode)
+                this.statements.push(val);
         });
         nonPorts.forEach((val) => {
             if(val instanceof PortNode)
                 this.ports.push(val);
-            if(val instanceof VariableNode)
+            else if(val instanceof AbstractVariableNode)
                 this.variables.push(val);
+            else if(val instanceof StatementNode)
+                this.statements.push(val);
         })
     }
 
@@ -279,7 +312,8 @@ export class ModuleNode extends AbstractNode {
         let children = new Array<AbstractNode>();
         return children
             .concat(this.ports)
-            .concat(this.variables);
+            .concat(this.variables)
+            .concat(this.statements);
     }
 
     public getIdentifier(): string {
@@ -311,45 +345,153 @@ export class StatementNode extends AbstractNode {
     public isAbstract() { return false; }
 }
 
-export class PortNode extends AbstractNode {
-
-    private portIdentifier: string;
-    private portType: string;
-    private virtual: boolean;
+export class AbstractVariableNode extends AbstractNode {
     
-    constructor(ctx: Port_identifierContext | Net_decl_assignmentContext) {
+    private variable_identifier: string;
+    private port_type: string;
+    private virtual: boolean;
+    private dimensions: [number, number][];
+
+    private sub_variable?: AbstractVariableNode;
+
+    constructor(ctx: ParserRuleContext, 
+            variable_identifier: string, 
+            port_type: string = "", 
+            sub_variable?: AbstractVariableNode, 
+            dimensions?: [number, number][],
+            virtual: boolean = false,){
         super(ctx);
-        this.portIdentifier = this.findIdentifier(ctx);
-        this.portType = this.findType(ctx);
 
-        this.virtual = false;
-        if (this.portType.startsWith("virtual")){
-            this.virtual = true;
-            this.portType = this.portType.substring(7);
-        }
-
+        this.variable_identifier = variable_identifier;
+        this.port_type = port_type;
+        this.sub_variable = sub_variable;
+        this.virtual = virtual;
+        this.dimensions = dimensions;
     }
 
-    public isAbstract() { return false; }
+    public appendToHierarchy(node: AbstractVariableNode){
+        if (this.sub_variable)
+            this.sub_variable.appendToHierarchy(node);
+        else
+            this.sub_variable = node;
+        if (this.stop.stopIndex < node.getStopToken().stopIndex)
+            this.stop = node.getStopToken();
+    }
 
     public getIdentifier(): string {
-        return this.portIdentifier;
+        return this.variable_identifier;
     }
 
     public getType(): string {
-        return this.portType;
+        return this.port_type;
     }
 
     public getVirtual(): boolean {
         return this.virtual;
     }
 
-    private findIdentifier(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
+    public getChildren(): AbstractNode[] {
+        if (this.sub_variable)
+            return [this.sub_variable];
+        return new Array<AbstractNode>();
+    }
+
+    public getDimensions(): [number, number][] {
+        if(this.dimensions)
+            return this.dimensions;
+        return new Array<[number,number]>();
+    }
+
+    public isAbstract() { return false; }
+    
+}
+
+export class VariableDeclarationNode extends AbstractVariableNode {
+
+    private static tempDimensions: [number, number][];
+
+    constructor(ctx: Variable_decl_assignmentContext){
+        VariableDeclarationNode.tempDimensions = new Array<[number,number]>();
+        let variable_identifier = VariableDeclarationNode.findIdentifier(ctx);
+        let variable_type = VariableDeclarationNode.findType(ctx);
+        super(ctx,variable_identifier, variable_type, null, VariableDeclarationNode.tempDimensions);
+    }
+
+    private static findIdentifier(ctx: Variable_decl_assignmentContext): string {
+        if(ctx.variable_identifier())
+            return ctx.variable_identifier().text;
+        else if(ctx.dynamic_array_variable_identifier())
+            return ctx.dynamic_array_variable_identifier().text;
+        else if(ctx.class_variable_identifier())
+            return ctx.class_variable_identifier().text;
+        return "";
+    }
+
+    private static findType(ctx: Variable_decl_assignmentContext): string {
+        let grandparent = ctx.parent.parent;
+        if(grandparent instanceof Assertion_variable_declarationContext)
+            return grandparent.var_data_type().text;
+        else if(grandparent instanceof Struct_union_memberContext)
+            return grandparent.data_type_or_void().text;
+        else if(grandparent instanceof Data_declarationContext)
+            return this.findRange(grandparent.data_type_or_implicit());
+        return "";
+    }
+
+    private static findRange(ctx: Data_type_or_implicitContext): string {
+        if(ctx.data_type()) {
+            for(let x = 0; x < ctx.data_type().packed_dimension().length; x++)
+                this.addDimension(ctx.data_type(), x);
+            if(ctx.data_type().integer_vector_type())
+                return ctx.data_type().integer_vector_type().text;
+            else if(ctx.data_type().type_identifier())
+                return ctx.data_type().type_identifier().text
+        }
+        return ctx.text;
+    }
+
+    private static addDimension(ctx: Data_typeContext, index: number){
+        let dim1 = parseInt(ctx.packed_dimension(index).constant_range().constant_expression(0).text);
+        let dim2 = parseInt(ctx.packed_dimension(index).constant_range().constant_expression(1).text);
+        this.tempDimensions.push([dim1, dim2]);
+    }
+}
+
+export class VariableNode extends AbstractVariableNode {
+    constructor(ctx: Hierarchical_identifierContext|Implicit_class_handleContext){
+        if (ctx instanceof Hierarchical_identifierContext) {
+            super(ctx,ctx.identifier()[0].text);
+            ctx.identifier().slice(1).forEach((val) => {
+                let new_node = new VariableNode(val);
+                this.appendToHierarchy(new_node);
+            });
+        }
+        else
+            super(ctx,ctx.text);
+    }
+}
+
+export class PortNode extends AbstractVariableNode {
+    
+    constructor(ctx: Port_identifierContext | Net_decl_assignmentContext) {
+        let port_identifier = PortNode.findIdentifier(ctx);
+        let port_type = PortNode.findType(ctx);
+
+        let virtual = false;
+        if (port_type.startsWith("virtual")){
+            virtual = true;
+            port_type = port_type.substring(7);
+        }
+
+        super(ctx,port_identifier,port_type,undefined,undefined,virtual);
+    }
+
+    private static findIdentifier(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
         return ctx instanceof Net_decl_assignmentContext ? ctx.net_identifier().text
                                                          : ctx.text;
     }
 
-    private findType(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
+    private static findType(ctx: Port_identifierContext | Net_decl_assignmentContext) : string {
         if(ctx instanceof Net_decl_assignmentContext) {
             let netdeclaration = ctx.parent.parent as Net_declarationContext;
             if(netdeclaration.net_type_identifier())
@@ -403,86 +545,4 @@ export class RootNode extends AbstractNode {
 
     public isAbstract() { return false; }
 
-}
-
-export class HierarchicalIdentifierNode extends AbstractNode {
-
-    private text: string;
-
-    constructor(ctx: Hierarchical_identifierContext|Implicit_class_handleContext){
-        super(ctx);
-
-        this.text = ctx.text;
-    }
-
-    public appendToHierarchy(node: HierarchicalIdentifierNode){
-        this.text += node.text;
-    }
-
-    public isAbstract() { return false; }
-}
-
-export class VariableNode extends AbstractNode {
-    
-    private variable_identifier: string;
-    private variable_type: string;
-    private variable_dimension: [number, number][];
-
-
-    constructor(ctx: Variable_decl_assignmentContext){
-        super(ctx);
-        this.variable_dimension = new Array<[number, number]>();
-        this.variable_identifier = this.findIdentifier(ctx);
-        this.variable_type = this.findType(ctx);
-    }
-
-    public getIdentifier(): string {
-        return this.variable_identifier;
-    }
-
-    public getType(): string {
-        return this.variable_type;
-    }
-
-    public isAbstract() { return false; }
-
-    private findIdentifier(ctx: Variable_decl_assignmentContext): string {
-        if(ctx.variable_identifier())
-            return ctx.variable_identifier().text;
-        else if(ctx.dynamic_array_variable_identifier())
-            return ctx.dynamic_array_variable_identifier().text;
-        else if(ctx.class_variable_identifier())
-            return ctx.class_variable_identifier().text;
-        return "";
-    }
-
-    private findType(ctx: Variable_decl_assignmentContext): string {
-        let grandparent = ctx.parent.parent;
-        if(grandparent instanceof Assertion_variable_declarationContext)
-            return grandparent.var_data_type().text;
-        else if(grandparent instanceof Struct_union_memberContext)
-            return grandparent.data_type_or_void().text;
-        else if(grandparent instanceof Data_declarationContext)
-            return this.findRange(grandparent.data_type_or_implicit());
-        return "";
-    }
-
-    private findRange(ctx: Data_type_or_implicitContext): string {
-        if(ctx.data_type()) {
-            for(let x = 0; x < ctx.data_type().packed_dimension().length; x++)
-                this.addDimension(ctx.data_type(), x);
-            if(ctx.data_type().integer_vector_type())
-                return ctx.data_type().integer_vector_type().text;
-            else if(ctx.data_type().type_identifier())
-                return ctx.data_type().type_identifier().text
-        }
-        return ctx.text;
-    }
-
-    private addDimension(ctx: Data_typeContext, index: number){
-        let dim1 = parseInt(ctx.packed_dimension(index).constant_range().constant_expression(0).text);
-        let dim2 = parseInt(ctx.packed_dimension(index).constant_range().constant_expression(1).text);
-        this.variable_dimension.push([dim1, dim2]);
-    }
-    
 }

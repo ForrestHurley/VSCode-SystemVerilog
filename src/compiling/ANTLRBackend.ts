@@ -17,6 +17,7 @@ import * as path from 'path';
 import { IncludeTree, IncludeFile } from "./IncludeTree";
 import { resolve } from "dns";
 import { State } from "vscode-languageclient";
+import { ASTUtils } from "./ANTLR/ASTUtils";
 
 export class ANTLRBackend{
     built_parse_trees = new Map<string, System_verilog_textContext>();
@@ -79,6 +80,7 @@ export class ANTLRBackend{
             
             let builder = new ASTBuilder();
             let ast = builder.visit(tree) as RootNode;
+            ASTUtils.initializeParents(ast);
             if (ast) {
                 ast.uri = document.uri;
                 await this.loadIncludes(ast);
