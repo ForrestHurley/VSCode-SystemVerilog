@@ -173,8 +173,8 @@
         "compile": "npm run antlr4ts_compile && tsc -p ./",
         "watch": "tsc -watch -p ./",
         "test": "npm run compile && node ./out/test/runTest.js",
-        "coverage": "nyc npm test",
-        "antlr4ts_compile": "antlr4ts -visitor ./src/compiling/ANTLR/grammar/SystemVerilog.g4 -o ./src/compiling/ANTLR/grammar/build"
+        "coverage": "npm run compile && node ./out/test/runTest.js --coverage",
+        "antlr4ts_compile": "cd ./src/compiling/ANTLR/grammar && antlr4ts -visitor SystemVerilog.g4 -o ./build"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
@@ -183,11 +183,18 @@
         "@types/vscode": "^1.31.0",
         "antlr4ts-cli": "^0.5.0-alpha.3",
         "glob": "^7.1.4",
+        "istanbul-lib-coverage": "^2.0.5",
+        "istanbul-lib-instrument": "^3.3.0",
+        "istanbul-lib-report": "^2.0.8",
+        "istanbul-lib-source-maps": "^3.0.6",
+        "istanbul-reports": "^2.2.6",
         "languages": "0.1.3",
-        "nyc": "^14.1.1",
+        "mocha": "^6.2.2",
         "typescript": "^3.7.2",
         "mocha-multi-reporters": "^1.1.7",
-        "vscode-test": "^1.0.0"
+        "vscode-test": "^1.0.0",
+        "source-map-support": "^0.5.13",
+        "ts-node": "^8.4.1"
     },
     "dependencies": {
         "antlr4": "^4.7.2",

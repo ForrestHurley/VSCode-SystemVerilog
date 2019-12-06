@@ -1,8 +1,7 @@
 import { SystemVerilogVisitor } from "./grammar/build/SystemVerilogVisitor";
-import { AbstractParseTreeVisitor } from "antlr4ts/Tree/AbstractParseTreeVisitor";
-import { AbstractNode, ClassNode, FunctionNode, IdentifierNode, RootNode, IncludeNode } from "./ASTNode";
+import { AbstractParseTreeVisitor } from "antlr4ts/tree/AbstractParseTreeVisitor";
+import { AbstractNode, ClassNode, FunctionNode, RootNode, IncludeNode, VariableNode, ConstraintNode, ModuleNode, PortNode, IdentifierNode } from "./ASTNode";
 import { ParseTree } from "antlr4ts/tree/ParseTree";
-import { RuleNode } from "antlr4ts/tree/RuleNode";
 import { System_verilog_textContext, Source_textContext, DescriptionContext, Module_nonansi_headerContext, Module_ansi_headerContext, 
     Module_declarationContext, Module_keywordContext, Interface_declarationContext, Interface_nonansi_headerContext, Interface_ansi_headerContext, 
     Program_declarationContext, Program_nonansi_headerContext, Program_ansi_headerContext, Checker_declarationContext, Class_declarationContext, 
@@ -147,33 +146,47 @@ import { System_verilog_textContext, Source_textContext, DescriptionContext, Mod
     Ps_or_hierarchical_sequence_identifierContext, Ps_or_hierarchical_tf_identifierContext, Ps_parameter_identifierContext, Ps_type_identifierContext, 
     Sequence_identifierContext, Signal_identifierContext, Simple_identifierContext, Specparam_identifierContext, Task_identifierContext, Tf_identifierContext, 
     Terminal_identifierContext, Topmodule_identifierContext, Type_identifierContext, Udp_identifierContext, Variable_identifierContext, Include_compiler_directiveContext } from "./grammar/build/SystemVerilogParser";
+import { RuleNode } from "antlr4ts/tree/RuleNode";
 
 export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implements SystemVerilogVisitor<AbstractNode> {
     protected defaultResult(): AbstractNode {
         return new AbstractNode();
     }
-    visitSystem_verilog_text(ctx: System_verilog_textContext) : AbstractNode {
+    visitSystem_verilog_text(ctx: System_verilog_textContext) : RootNode {
         let child_nodes = this.traverseChildren(ctx);
-        return new RootNode(child_nodes);
+        return new RootNode(ctx, child_nodes);
     }
     visitSource_text?: (ctx: Source_textContext) => AbstractNode;
     visitDescription?: (ctx: DescriptionContext) => AbstractNode;
     visitModule_nonansi_header?: (ctx: Module_nonansi_headerContext) => AbstractNode;
     visitModule_ansi_header?: (ctx: Module_ansi_headerContext) => AbstractNode;
-    visitModule_declaration?: (ctx: Module_declarationContext) => AbstractNode;
+    visitModule_declaration(ctx: Module_declarationContext): AbstractNode {
+        let items: AbstractNode[] = new Array<AbstractNode>();
+        ctx.module_item().forEach((val) => {
+            items = items.concat(this.traverseChildren(val));
+        });
+        let nonPorts: AbstractNode[] = new Array<AbstractNode>();
+        ctx.non_port_module_item().forEach((val) => {
+            nonPorts = nonPorts.concat(this.traverseChildren(val));
+        });
+        return new ModuleNode(ctx, items, nonPorts);
+    }
     visitModule_keyword?: (ctx: Module_keywordContext) => AbstractNode;
     visitInterface_declaration?: (ctx: Interface_declarationContext) => AbstractNode;
     visitInterface_nonansi_header?: (ctx: Interface_nonansi_headerContext) => AbstractNode;
     visitInterface_ansi_header?: (ctx: Interface_ansi_headerContext) => AbstractNode;
-    visitInclude_compiler_directive(ctx: Include_compiler_directiveContext): AbstractNode {
+    visitInclude_compiler_directive(ctx: Include_compiler_directiveContext): IncludeNode {
         return new IncludeNode(ctx);
     }
     visitProgram_declaration?: (ctx: Program_declarationContext) => AbstractNode;
     visitProgram_nonansi_header?: (ctx: Program_nonansi_headerContext) => AbstractNode;
     visitProgram_ansi_header?: (ctx: Program_ansi_headerContext) => AbstractNode;
     visitChecker_declaration?: (ctx: Checker_declarationContext) => AbstractNode;
-    visitClass_declaration(ctx: Class_declarationContext): AbstractNode {
-        let items = ctx.class_item().map((val) => { return this.visit(val); });
+    visitClass_declaration(ctx: Class_declarationContext): ClassNode {
+        let items: AbstractNode[] = new Array<AbstractNode>();
+        ctx.class_item().forEach((val) => {
+            items = items.concat(this.traverseChildren(val));
+        });
         return new ClassNode(ctx,items);
     }
     visitInterface_class_type?: (ctx: Interface_class_typeContext) => AbstractNode;
@@ -241,7 +254,9 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitMethod_qualifier?: (ctx: Method_qualifierContext) => AbstractNode;
     visitMethod_prototype?: (ctx: Method_prototypeContext) => AbstractNode;
     visitClass_constructor_declaration?: (ctx: Class_constructor_declarationContext) => AbstractNode;
-    visitConstraint_declaration?: (ctx: Constraint_declarationContext) => AbstractNode;
+    visitConstraint_declaration(ctx: Constraint_declarationContext) : ConstraintNode {
+        return new ConstraintNode(ctx);
+    }
     visitConstraint_block?: (ctx: Constraint_blockContext) => AbstractNode;
     visitConstraint_block_item?: (ctx: Constraint_block_itemContext) => AbstractNode;
     visitSolve_before_list?: (ctx: Solve_before_listContext) => AbstractNode;
@@ -319,7 +334,9 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitList_of_variable_identifiers?: (ctx: List_of_variable_identifiersContext) => AbstractNode;
     visitList_of_variable_port_identifiers?: (ctx: List_of_variable_port_identifiersContext) => AbstractNode;
     visitDefparam_assignment?: (ctx: Defparam_assignmentContext) => AbstractNode;
-    visitNet_decl_assignment?: (ctx: Net_decl_assignmentContext) => AbstractNode;
+    visitNet_decl_assignment(ctx: Net_decl_assignmentContext):AbstractNode {
+        return new PortNode(ctx);
+    }
     visitParam_assignment?: (ctx: Param_assignmentContext) => AbstractNode;
     visitSpecparam_assignment?: (ctx: Specparam_assignmentContext) => AbstractNode;
     visitType_assignment?: (ctx: Type_assignmentContext) => AbstractNode;
@@ -327,7 +344,9 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitError_limit_value?: (ctx: Error_limit_valueContext) => AbstractNode;
     visitReject_limit_value?: (ctx: Reject_limit_valueContext) => AbstractNode;
     visitLimit_value?: (ctx: Limit_valueContext) => AbstractNode;
-    visitVariable_decl_assignment?: (ctx: Variable_decl_assignmentContext) => AbstractNode;
+    visitVariable_decl_assignment(ctx: Variable_decl_assignmentContext): VariableNode {
+        return new VariableNode(ctx);
+    }
     visitClass_new?: (ctx: Class_newContext) => AbstractNode;
     visitDynamic_array_new?: (ctx: Dynamic_array_newContext) => AbstractNode;
     visitUnpacked_dimension?: (ctx: Unpacked_dimensionContext) => AbstractNode;
@@ -337,10 +356,14 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitQueue_dimension?: (ctx: Queue_dimensionContext) => AbstractNode;
     visitUnsized_dimension?: (ctx: Unsized_dimensionContext) => AbstractNode;
     visitFunction_data_type_or_implicit?: (ctx: Function_data_type_or_implicitContext) => AbstractNode;
-    visitFunction_declaration(ctx: Function_declarationContext): AbstractNode {
-        return new FunctionNode(ctx);
+    visitFunction_declaration?: (ctx: Function_declarationContext) => AbstractNode;
+    visitFunction_body_declaration(ctx: Function_body_declarationContext): AbstractNode {
+        let tfitems: AbstractNode[] = new Array<AbstractNode>();
+        ctx.tf_item_declaration().forEach((val) => {
+            tfitems = tfitems.concat(this.traverseChildren(val));
+        });
+        return new FunctionNode(ctx, tfitems);
     }
-    visitFunction_body_declaration?: (ctx: Function_body_declarationContext) => AbstractNode;
     visitFunction_prototype?: (ctx: Function_prototypeContext) => AbstractNode;
     visitDpi_import_export?: (ctx: Dpi_import_exportContext) => AbstractNode;
     visitDpi_spec_string?: (ctx: Dpi_spec_stringContext) => AbstractNode;
@@ -808,9 +831,7 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitC_identifier?: (ctx: C_identifierContext) => AbstractNode;
     visitCell_identifier?: (ctx: Cell_identifierContext) => AbstractNode;
     visitChecker_identifier?: (ctx: Checker_identifierContext) => AbstractNode;
-    visitClass_identifier(ctx: Class_identifierContext): AbstractNode {
-        return new AbstractNode();
-    }
+    visitClass_identifier?: (ctx: Class_identifierContext) => AbstractNode;
     visitClass_variable_identifier?: (ctx: Class_variable_identifierContext) => AbstractNode;
     visitClocking_identifier?: (ctx: Clocking_identifierContext) => AbstractNode;
     visitConfig_identifier?: (ctx: Config_identifierContext) => AbstractNode;
@@ -838,7 +859,9 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitHierarchical_task_identifier?: (ctx: Hierarchical_task_identifierContext) => AbstractNode;
     visitHierarchical_tf_identifier?: (ctx: Hierarchical_tf_identifierContext) => AbstractNode;
     visitHierarchical_variable_identifier?: (ctx: Hierarchical_variable_identifierContext) => AbstractNode;
-    visitIdentifier?: (ctx: IdentifierContext) => AbstractNode;
+    visitIdentifier(ctx: IdentifierContext): AbstractNode {
+        return new IdentifierNode(ctx);
+    }
     visitIndex_variable_identifier?: (ctx: Index_variable_identifierContext) => AbstractNode;
     visitInterface_identifier?: (ctx: Interface_identifierContext) => AbstractNode;
     visitInterface_instance_identifier?: (ctx: Interface_instance_identifierContext) => AbstractNode;
@@ -849,17 +872,16 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitMember_identifier?: (ctx: Member_identifierContext) => AbstractNode;
     visitMethod_identifier?: (ctx: Method_identifierContext) => AbstractNode;
     visitModport_identifier?: (ctx: Modport_identifierContext) => AbstractNode;
-    visitModule_identifier(ctx: Module_identifierContext) : AbstractNode {
-        let out = new IdentifierNode(ctx.text,this.traverseChildren(ctx));
-        return out;
-    }
+    visitModule_identifier?: (ctx: Module_identifierContext) => AbstractNode;
     visitNet_identifier?: (ctx: Net_identifierContext) => AbstractNode;
     visitNet_type_identifier?: (ctx: Net_type_identifierContext) => AbstractNode;
     visitOutput_port_identifier?: (ctx: Output_port_identifierContext) => AbstractNode;
     visitPackage_identifier?: (ctx: Package_identifierContext) => AbstractNode;
     visitPackage_scope?: (ctx: Package_scopeContext) => AbstractNode;
     visitParameter_identifier?: (ctx: Parameter_identifierContext) => AbstractNode;
-    visitPort_identifier?: (ctx: Port_identifierContext) => AbstractNode;
+    visitPort_identifier(ctx: Port_identifierContext): AbstractNode {
+        return new PortNode(ctx);
+    }
     visitProduction_identifier?: (ctx: Production_identifierContext) => AbstractNode;
     visitProgram_identifier?: (ctx: Program_identifierContext) => AbstractNode;
     visitProperty_identifier?: (ctx: Property_identifierContext) => AbstractNode;
@@ -887,17 +909,17 @@ export class ASTBuilder extends AbstractParseTreeVisitor<AbstractNode> implement
     visitVariable_identifier?: (ctx: Variable_identifierContext) => AbstractNode;
 
     /*visitTerminal(node: import("antlr4ts/tree/TerminalNode").TerminalNode): AbstractNode {
-        //throw new Error("Method not implemented.");
-        return new AbstractNode();
-    }*/
+        return new TerminalNode(node);
+    }
 
     /*visitErrorNode(node: import("antlr4ts/tree/ErrorNode").ErrorNode): AbstractNode {
         throw new Error("Method not implemented.");
     }*/
 
-    /*visitChildren(rule : RuleNode) : AbstractNode {
-        throw new Error("Method not implemented.");
-    }*/
+    visitChildren(rule : RuleNode) : AbstractNode {
+        //DO NOTHING
+        return this.defaultResult();
+    }
 
     traverseChildren(tree : ParseTree) : AbstractNode[] {
         let childArray = new Array<AbstractNode>();

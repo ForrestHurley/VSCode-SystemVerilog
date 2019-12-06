@@ -1,5 +1,8 @@
-
-import {CompletionItem, Position, TextDocument, CancellationToken, CompletionContext, CompletionItemKind, Command } from 'vscode-languageserver';
+import {ANTLRBackend} from '../compiling/ANTLRBackend';
+import {Range, CompletionItem, Position, TextDocument, CancellationToken, CompletionContext, CompletionItemKind, Command } from 'vscode-languageserver';
+import { ASTUtils } from "../compiling/ANTLR/ASTUtils"
+import { type } from 'os';
+import { PortNode } from '../compiling/ANTLR/ASTNode';
 
 // See test/SymbolKind_icons.png for an overview of the icons
 export function getCompletionItemKind(name: String): CompletionItemKind {
@@ -28,9 +31,10 @@ export function getCompletionItemKind(name: String): CompletionItemKind {
  */
 export class SVCompletionItemProvider {
     private globals: CompletionItem[] = [];     
+    private backend: ANTLRBackend;
 
-    constructor() {
-
+    constructor(backend: ANTLRBackend) {
+        this.backend = backend;
     };
 
     //Entrypoint for getting completion items
@@ -43,7 +47,7 @@ export class SVCompletionItemProvider {
             case '$':
                 completionItems = completionItems.concat(this.getDollarItems());
             case '.':
-                completionItems = completionItems.concat(this.getFieldItems(position));
+                completionItems = completionItems.concat(this.getFieldItems(document, position));
             case ' ':
                 //completion items for empty space trigger char
         }
@@ -56,9 +60,9 @@ export class SVCompletionItemProvider {
 
         //more dollar items can be added here, or this list can be extracted in separate file
         var dollaritems = new Map([
-            [ 'display', 'function'],
-            [ 'finish', 'string'],
-            [ 'monitor', 'function'],
+            ['display', 'function'],
+            ['finish', 'string'],
+            ['monitor', 'function'],
             ['dumpfile', 'function'],
             ['support', 'function']
          ]);
@@ -70,7 +74,7 @@ export class SVCompletionItemProvider {
         return completionItems;
     }
 
-    private getFieldItems(position: Position): CompletionItem[] {
+    private getFieldItems(document: TextDocument, position: Position): CompletionItem[] {
         let completionItems : CompletionItem[] = [];
         let fieldItems: string[] = [];
         
@@ -78,6 +82,24 @@ export class SVCompletionItemProvider {
         //find token before "."
         //get field items using AST
         //
+        
+        let uri = document.uri.toString();
+        let ast = this.backend.abstract_trees[uri];
+        
+        let loc = document.positionAt(document.offsetAt(position)-2);
+        let range = Range.create(loc,loc);
+
+        let node = ASTUtils.findNodeFromRange(range,ast);
+
+        if (node instanceof PortNode){
+            
+        }
+        
+        // this.backend.abstract_trees[uri].children[*]
+        // ast.entries.forEach(entry => {
+        
+        // });
+        
         fieldItems.forEach(element => {
             //check field type - variable, method
             completionItems.push(this.constructCompletionItems(element, 'string'));
@@ -91,3 +113,4 @@ export class SVCompletionItemProvider {
         return item;
     }
 };
+
