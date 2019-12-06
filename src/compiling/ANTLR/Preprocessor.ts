@@ -198,6 +198,41 @@ export class Preprocessor {
     } 
 
     /**
+     * Translates a given row and column from the original-text index to the row and column for the same character in the parsed text
+     * @param given_row The row to translate from the original-text row to the parsed-text row
+     * @param given_col The column to translate from the original-text column to the parsed-text column
+     * @returns The row and column of the character in the parsed text [row, col]
+     */
+    public translate_row_col_from_original_to_parsed(given_row: number, given_col: number): [number, number] {
+        let original_index: number = this.translate_row_col_to_index(this.original_text, given_row, given_col);
+        let parsed_index: number = this.translate_index_from_original_to_parsed(original_index);
+        if (parsed_index == -1) {
+            return [-1, -1];
+        }
+        let parsed_row_col: [number, number] = this.translate_index_to_row_col(this.parsed_text, parsed_index);
+        return parsed_row_col;
+    }
+
+    /**
+     * Translates a given index from the original-text index to the index for the same character in the parsed text
+     * @param given_index The index to translate from the original-text index to the parsed-text index
+     * @returns The index of the character in the parsed text
+     */
+    private translate_index_from_original_to_parsed(given_index: number): number {
+        let current_index: number = given_index;
+        this.translation_info.forEach(function (translation) {
+            if (translation[0] < current_index) {
+                // if the character was part of a deletion
+                if (translation[1] > 0 && current_index < translation[0] + translation[1]) {
+                    return -1;
+                }
+                current_index -= translation[1];
+            }
+        });
+        return current_index;
+    } 
+
+    /**
      * Translates the given row and column to the corresponding index in the given text
      * @param text The text to use to translate the row and column to an index
      * @param row The row of the character to get the index of in the text
