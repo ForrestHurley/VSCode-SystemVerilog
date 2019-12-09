@@ -2,8 +2,6 @@ import { Class_declarationContext, Function_body_declarationContext, Include_com
 import { Token } from "antlr4ts/Token";
 import { ParserRuleContext } from "antlr4ts";
 import { Range, Position } from "vscode-languageserver-types";
-import { State } from "vscode-languageclient";
-import { PassThrough } from "stream";
 
 export class AbstractNode {
 
