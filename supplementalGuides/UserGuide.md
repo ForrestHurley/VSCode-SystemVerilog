@@ -38,13 +38,12 @@ Getting released version from VS Code Marketplace.
 	![includeError](error_include.png)
 
 ### Autocomplete Code
-
+- Autocompletion
 	![dollarsign](autocomplete_dollar.gif)
-
 ## Settings
 Change the settings listed below to customize the extension experience.
 
-	![settings](settings.png)
+![settings](settings.png)
 
 - `Antlr Verification`: Use ANTLR parser to verify code in real-time
 - `Compile On Save`: Compile SystemVerilog files when saved
