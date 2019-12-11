@@ -27,6 +27,7 @@ import { beforeEach } from 'mocha'
 import { Select_expressionContext } from '../compiling/ANTLR/grammar/build/SystemVerilogParser';
 import { TransportKind, TextDocumentIdentifier } from 'vscode-languageclient';
 import { Duplex } from 'stream';
+import { Preprocessor } from '../compiling/ANTLR/Preprocessor';
 
 const testFolderLocation = '../../src/test/';
 
@@ -61,12 +62,11 @@ suite('Macro Replacement Tests', () => {
         await macroReplaceTest(input_file_name, expected_file_name);
     }).timeout(10000);
 
-    //This feature is not currently implemented
-    /*test('test #6: Macro replacement/definition removal for text with single macro defined twice and used after each definition', async () => {
+    test('test #6: Macro replacement/definition removal for text with single macro defined twice and used after each definition', async () => {
         let input_file_name: string = `test-files/MacroReplace.test/redefined_macro.sv`;
         let expected_file_name: string = `test-files/MacroReplace.test/redefined_macro_expected.sv`;
         await macroReplaceTest(input_file_name, expected_file_name);
-    }).timeout(10000);*/
+    }).timeout(10000);
 
     test('test #7: Macro replacement/definition removal for text with single multiline macro definition with one use', async () => {
         let input_file_name: string = `test-files/MacroReplace.test/multiline_macro.sv`;
@@ -95,7 +95,7 @@ async function macroReplaceTest(input_file: string, expected_file: string) {
         let document2: TextDocument = castTextDocument(documentWorkspace2);
         let expected_text: string = document2.getText().replace(/\r\n/g, '\n');
 
-        let output_text: string = new ANTLRBackend().macroReplace(input_text);
+        let output_text: string = new Preprocessor().macroReplace(input_text);
 
         if (output_text != expected_text) {
             assert.fail();
