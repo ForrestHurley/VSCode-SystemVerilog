@@ -39,7 +39,7 @@ Getting released version from VS Code Marketplace.
 
 ### Autocomplete Code
 - Autocompletion
-	![dollarsign](autocomplete_dollar.gif)
+	![dollarsign](auto_dollar.gif)
 ## Settings
 Change the settings listed below to customize the extension experience.
 
