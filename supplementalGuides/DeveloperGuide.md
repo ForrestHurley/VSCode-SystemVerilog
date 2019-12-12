@@ -3,7 +3,6 @@
 This Developer guide is for future senior design teams or other developers who want to extend or modify the project.
 
 
-# Files
 ### Required Software Tools
 - Java
 - node.js and npm - documentation on installing them can be found [here](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
@@ -20,10 +19,14 @@ List of all the dependencies can be found in `/package.json` file
 
 ![dependencies](dependencies.png)
 
-## Rename a file
+## Files
+### Preprocessor
+Replaces portions of code with other code
 
-You can rename the current file by clicking the file name in the navigation bar or by clicking the **Rename** button in the file explorer.
+### Abstract Syntax Tree
+Abstract Syntax Tree contains high level information about SystemVerilog code structure
 
+### Include Tree and Handler
 
 ## Testing
 ### Documentations
@@ -37,6 +40,16 @@ You can rename the current file by clicking the file name in the navigation bar 
 
 - VSCode Extension Development Host opens up and runs the tests
 - Test results are displayed on terminal or you can find the generated xml test results file on root - `results.xml` .
+### Code Coverage
+- coverage.ts file is added for code coverage
+  - uses `istanbul` api 
+  - used custom coveras script written by Microsoft Developer Alexandru Dima
+    https://github.com/alexdima/vscode-extension-coverage-sample
+
+- Run the following command to generate coverage report 
+
+    	npm run coverage
+
 ### Adding new tests
 All test classes and test files can be found in `test` directory
 
