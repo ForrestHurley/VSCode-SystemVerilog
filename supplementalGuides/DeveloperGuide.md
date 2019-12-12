@@ -20,6 +20,9 @@ List of all the dependencies can be found in `/package.json` file
 ![dependencies](dependencies.png)
 
 ## Files
+### ANTLR4 Grammar
+Our grammar files are in src/compiling/ANTLR/grammar/ and if you want to edit them, refer to the [ANTLR4 Documentation](https://github.com/antlr/antlr4/blob/master/doc/index.md) for information on ANTLR, or [IEEE Standard 1800-2017](https://ieeexplore.ieee.org/servlet/opac?punumber=8299593) for the the formal syntax they are based on. SystemVerilog.g4 is the root file for the grammar.
+
 ### Preprocessor
 Replaces portions of code with other code
 
