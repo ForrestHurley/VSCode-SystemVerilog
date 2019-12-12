@@ -38,8 +38,11 @@ Getting released version from VS Code Marketplace.
 	![includeError](error_include.png)
 
 ### Autocomplete Code
-- Autocompletion
+- Autocompletion for dollar sign
 	![dollarsign](auto_dollar.gif)
+- Autocompletion for `this`
+	![this](auto_this.gif)
+
 ## Settings
 Change the settings listed below to customize the extension experience.
 
