@@ -50,7 +50,7 @@ export class IncludeTree extends Map<string,IncludeFile>{
         let include_list:string[] = [...this[file_name].included_files];
 
         this[file_name].included_files.forEach((val:string) => {
-            include_list.concat(this.GetAllIncludes(val));
+            include_list =include_list.concat(this.GetAllIncludes(val));
         });
 
         //Remove duplicates
