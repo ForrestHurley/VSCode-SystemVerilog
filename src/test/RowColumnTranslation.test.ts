@@ -32,6 +32,7 @@ import { Preprocessor } from '../compiling/ANTLR/Preprocessor';
 const testFolderLocation = '../../src/test/';
 
 suite('Row-Column Translation Tests', () => {
+    // Test row-col translation from original (row 1, col 1) to parsed (row 1, col 1) for text with no macro definitions
     test('test #1: Translation from original row and column to parsed row and column for text without macro definitions', async () => {
         let input_file_name: string = `test-files/MacroReplace.test/no_macros.sv`;
         let original_row_col: [number, number] = [1, 1];
@@ -39,6 +40,7 @@ suite('Row-Column Translation Tests', () => {
         await rowColumnTranslationOriginalToParsedTest(input_file_name, original_row_col, expected_row_col);
     }).timeout(10000);
 
+    // Test row-col translation from parsed (row 1, col 1) to original (row 1, col 1) for text with no macro definitions
     test('test #2: Translation from parsed row and column to original row and column for text without macro definitions', async () => {
         let input_file_name: string = `test-files/MacroReplace.test/no_macros.sv`;
         let parsed_row_col: [number, number] = [1, 1];
@@ -46,6 +48,7 @@ suite('Row-Column Translation Tests', () => {
         await rowColumnTranslationParsedToOriginalTest(input_file_name, parsed_row_col, expected_row_col);
     }).timeout(10000);
 
+    // Test row-col translation from original (row 2, col 14) to parsed (row 1, col 14) for text with one macro definition but no uses
     test('test #3: Translation from original row and column to parsed row and column for text with single macro definition but no macro uses', async () => {
         let input_file_name: string = `test-files/MacroReplace.test/single_macro_no_uses.sv`;
         let original_row_col: [number, number] = [2, 14];
@@ -53,6 +56,7 @@ suite('Row-Column Translation Tests', () => {
         await rowColumnTranslationOriginalToParsedTest(input_file_name, original_row_col, expected_row_col);
     }).timeout(10000);
 
+    // Test row-col translation from parsed (row 1, col 14) to original (row 2, col 14) for text with one macro definition but no uses
     test('test #4: Translation from parsed row and column to original row and column for text with single macro definition but no macro uses', async () => {
         let input_file_name: string = `test-files/MacroReplace.test/single_macro_no_uses.sv`;
         let parsed_row_col: [number, number] = [1, 14];
@@ -60,6 +64,7 @@ suite('Row-Column Translation Tests', () => {
         await rowColumnTranslationParsedToOriginalTest(input_file_name, parsed_row_col, expected_row_col);
     }).timeout(10000);
 
+    // Test row-col translation from original (row 5, col 22) to parsed (row 3, col 14) for text with multiple macro definitions with multiple uses
     test('test #5: Translation from original row and column to parsed row and column for text with multiple macro definitions with multiple macro uses', async () => {
         let input_file_name: string = `test-files/MacroReplace.test/multiple_macros_multiple_uses.sv`;
         let original_row_col: [number, number] = [5, 22];
@@ -67,6 +72,7 @@ suite('Row-Column Translation Tests', () => {
         await rowColumnTranslationOriginalToParsedTest(input_file_name, original_row_col, expected_row_col);
     }).timeout(10000);
 
+    // Test row-col translation from parsed (row 3, col 14) to original (row 5, col 22) for text with multiple macro definitions with multiple uses
     test('test #6: Translation from parsed row and column to original row and column for text with multiple macro definitions with multiple macro uses', async () => {
         let input_file_name: string = `test-files/MacroReplace.test/multiple_macros_multiple_uses.sv`;
         let parsed_row_col: [number, number] = [3, 14];
