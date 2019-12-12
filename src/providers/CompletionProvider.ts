@@ -2,7 +2,7 @@ import {ANTLRBackend} from '../compiling/ANTLRBackend';
 import {Range, CompletionItem, Position, TextDocument, CancellationToken, CompletionContext, CompletionItemKind, Command } from 'vscode-languageserver';
 import { ASTUtils } from "../compiling/ANTLR/ASTUtils"
 import { type } from 'os';
-import { PortNode } from '../compiling/ANTLR/ASTNode';
+import { PortNode, AbstractVariableNode, ClassNode, VariableDeclarationNode } from '../compiling/ANTLR/ASTNode';
 
 // See test/SymbolKind_icons.png for an overview of the icons
 export function getCompletionItemKind(name: String): CompletionItemKind {
@@ -46,10 +46,15 @@ export class SVCompletionItemProvider {
         switch (triggerChar) {
             case '$':
                 completionItems = completionItems.concat(this.getDollarItems());
+                break;
             case '.':
                 completionItems = completionItems.concat(this.getFieldItems(document, position));
+                break;
             case ' ':
                 //completion items for empty space trigger char
+                break;
+            case '[':
+                break;
         }
         
         return completionItems;
@@ -76,7 +81,8 @@ export class SVCompletionItemProvider {
 
     private getFieldItems(document: TextDocument, position: Position): CompletionItem[] {
         let completionItems : CompletionItem[] = [];
-        let fieldItems: string[] = [];
+        let property_items: string[] = [];
+        let method_items: string[] = [];
         
         //use passed in position to
         //find token before "."
@@ -87,12 +93,29 @@ export class SVCompletionItemProvider {
         let ast = this.backend.abstract_trees[uri];
         
         let loc = document.positionAt(document.offsetAt(position)-2);
+        loc.line += 1;
         let range = Range.create(loc,loc);
 
         let node = ASTUtils.findNodeFromRange(range,ast);
 
-        if (node instanceof PortNode){
-            
+        if (node instanceof AbstractVariableNode){
+            if (node.getIdentifier() == "this"){
+                let this_node = ASTUtils.findThis(node);
+                if (this_node instanceof ClassNode){
+                    this_node.getProperties().forEach((val) => {
+                        property_items.push(val.getIdentifier());
+                    });
+                    this_node.getMethods().forEach((val) => {
+                        method_items.push(val.getIdentifier());
+                    });
+                }
+            }
+            else {
+                let defin_node = ASTUtils.findDefinition(node);
+                if (defin_node instanceof VariableDeclarationNode) {
+                    //something with the type of the definition
+                }
+            }
         }
         
         // this.backend.abstract_trees[uri].children[*]
@@ -100,9 +123,11 @@ export class SVCompletionItemProvider {
         
         // });
         
-        fieldItems.forEach(element => {
-            //check field type - variable, method
-            completionItems.push(this.constructCompletionItems(element, 'string'));
+        property_items.forEach(element => {
+            completionItems.push(this.constructCompletionItems(element, 'parameter'));
+        });
+        method_items.forEach(element => {
+            completionItems.push(this.constructCompletionItems(element, 'task'));
         });
         return completionItems;
     }

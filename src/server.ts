@@ -49,7 +49,7 @@ connection.onInitialize((params: InitializeParams) => {
 			completionProvider: {
 				resolveProvider: true,
 				//trigger chars, we can add more or remove one that we don't need
-				triggerCharacters: ['.', ':', '$',' ']
+				triggerCharacters: ['.', ':', '$',' ','[']
 			}
 		}
 	};
