@@ -150,7 +150,7 @@ export class Preprocessor {
                     // Add removal of macro label to translation_info
                     this.translation_info.push([macro_index - 1, define[0].length + 1, -1]);
                     // Add insertion of macro value to translation_info
-                    this.translation_info.push([macro_index - 1, -1 * define.length, define[2] + ("`define " + define[0] + " ").length]);
+                    this.translation_info.push([macro_index - 1, -1 * define[1].length, define[2] + ("`define " + define[0] + " ").length]);
                     // Replace macro
                     new_text = new_text.slice(0, macro_index) + define[1] + new_text.slice(macro_index + 1 + define[0].length);
                     break;
