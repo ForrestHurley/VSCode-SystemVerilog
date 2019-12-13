@@ -31,7 +31,7 @@ List of all the dependencies can be found in `\package.json` file
 Our grammar files are in `\src\compiling\ANTLR\grammar\` and if you want to edit them, refer to the [ANTLR4 Documentation](https://github.com/antlr/antlr4/blob/master/doc/index.md) for information on ANTLR, or [IEEE Standard 1800-2017](https://ieeexplore.ieee.org/servlet/opac?punumber=8299593) for the the formal syntax they are based on. `SystemVerilog.g4` is the root file for the grammar.
 
 ### Abstract Syntax Tree
-Abstract Syntax Tree (AST) contains high level information about SystemVerilog code structure.
+Abstract Syntax Tree (AST) contains high level information about SystemVerilog code structure. `//add more`
 
 AST related files can be found under `\src\compiling\ANTLR\` folder.
 
@@ -55,12 +55,51 @@ Communication between the tool - VSCode (client) and backend logic (server) was 
 
  - For the list of different tools that supports **LSP**, click [here](https://microsoft.github.io/language-server-protocol/implementors/tools/)
 
- - For the list of implementations of different **Language Servers**, click [here](https://microsoft.github.io/language-server-protocol/implementors/servers/) ( You can find good examples here )
+ - For the list of implementations of different **Language Servers**, click [here](https://microsoft.github.io/language-server-protocol/implementors/servers/) and [here](https://langserver.org/) ( You can find some good example projects )
 
 
 #### Defining custom messeges
+`add explanation`
 
-`//here`
+
+Example:
+```typescript
+/**
+    Sends a notification to the LSP to compile the opened document. Keeps the `Progress` window opened until `extensionLanguageClient.closeWindowProgress` is set to true or the interval iterations count reaches the maximum value.
+    `closeWindowProgress` is updated to true when a notification is sent to the client from LSP.
+  */
+  function compileOpenedDocument(): void {
+    let document = window.activeTextEditor.document;
+    if (!document) {
+      window.showErrorMessage("There is no open document!");
+      return;
+    }
+
+    closeWindowProgress = false;
+    Promise.resolve(window.withProgress({
+      location: ProgressLocation.Notification,
+      title: "SystemVerilog Document compiling...",
+      cancellable: true
+    }, async (_progress, token) => {
+      client.sendNotification("compileOpenedDocument", document.uri.toString());
+
+      var intervalCount = 0;
+      var interval = setInterval(function () {
+        if (closeWindowProgress || intervalCount > 5) {
+          clearInterval(interval);
+        }
+        intervalCount++;
+      },
+        500);
+
+
+    })).catch((error) => {
+      outputChannel.appendLine(error);
+      window.showErrorMessage(error);
+    });
+  }
+}
+```
 
 ### Adding a New Feature
 Adding a new feature to extension?
