@@ -40,7 +40,9 @@ Getting released version from VS Code Marketplace.
 ### Autocomplete Code
 - Autocompletion for dollar sign
 	![dollarsign](auto_dollar.gif)
+
 - Autocompletion for `this`
+
 	![this](auto_this.gif)
 
 ## Settings

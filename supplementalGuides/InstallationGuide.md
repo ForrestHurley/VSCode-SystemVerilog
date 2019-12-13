@@ -1,6 +1,6 @@
 # Installation Guide
 
-Installation guide includes steps for building and publishing the project - **SystemVerilog language extension for Visual Studio Code**. 
+Installation guide includes steps for building and publishing the project - **SystemVerilog Language Extension for Visual Studio Code**. 
 
 ## Requirements
 
@@ -36,19 +36,15 @@ Compile code and generate parser
     npm install -g vsce
  #### Package the extension
  
-Pre-publish step is added in `pakage.json` under`scripts` sections
+Pre-publish step is added in `pakage.json` under `"scripts":` section
 
     vsce package
- `systemverilog-<version>.vsix` file generated
+ `systemverilog-<version>.vsix` file is generated
 
 #### Installing the packaged extension
 
     code --install-extension systemverilog-<version>.vsix
 
-
-## Continuous Integration and Deployment with Azure DevOps
-
-All of the build and publish steps described in previous sections can be done automatically using **Azure DevOps** pipelines.
-
-### Connect NCSU github repository to AzureDevOps pipeline
-
+#### Verification of the installation
+First, make sure that no other extensions for `SystemVerilog` is enabled. You can see the list of enabled extensions by checking `extensions tab` on the left of VSCode. 
+Easiest way of verifying the correct installation of the extension is opening up one of the `.sv` document on VSCode. Check if the additional functionalities added for current release are working correctly.
